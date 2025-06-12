@@ -1,0 +1,27 @@
+{
+  "name": "stadiamaps-mcp-server",
+  "version": "0.1.0",
+  "description": "",
+  "type": "module",
+  "bin": {
+    "mcp": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod 755 build/index.js",
+    "lint": "prettier -c .",
+    "lint:fix": "prettier --write ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@stadiamaps/api": "^8.0.0",
+    "zod": "^3.25.58"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.31",
+    "prettier": "3.5.3",
+    "typescript": "^5.8.3"
+  },
+  "files": [
+    "build"
+  ]
+}
