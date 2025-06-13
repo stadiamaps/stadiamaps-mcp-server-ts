@@ -2,22 +2,15 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import {
-  RoutingApi,
-  CostingModel,
-  DistanceUnit,
-  instanceOfRouteResponse,
-  RouteRequest,
-} from "@stadiamaps/api";
-import { apiConfig } from "./config.js";
+import { CostingModel, DistanceUnit } from "@stadiamaps/api";
+import { Coordinates } from "./types.js";
 import { timeAndZoneInfo } from "./tools/tz.js";
 import {
   addressGeocode,
   coarseLookup,
   placeSearch,
 } from "./tools/geocoding.js";
-
-const routeApi = new RoutingApi(apiConfig);
+import { routeOverview } from "./tools/routing.js";
 
 const server = new McpServer({
   name: "stadia-maps",
@@ -29,8 +22,6 @@ const server = new McpServer({
 });
 
 // TODO: Set an explicit user agent? Or is that done above?
-
-export type Coordinates = { lat: number; lon: number };
 
 // Tool setup
 
@@ -147,7 +138,6 @@ server.tool(
   "route-overview",
   "Get high-level routing information between two or more locations. Includes travel time, distance, and an encoded polyline of the route.",
   {
-    // Params
     locations: z
       .array(
         z
@@ -167,79 +157,7 @@ server.tool(
       .nativeEnum(DistanceUnit)
       .describe("The unit to report distances in."),
   },
-  // Echoes params
-  async ({ locations, costing, units }) => {
-    console.error("Generate route request...");
-    const req: RouteRequest = {
-      locations,
-      // directionsType: 'none',
-      units,
-      costing,
-    };
-    console.error("req", req);
-
-    try {
-      const res = await routeApi.route({ routeRequest: req });
-
-      if (instanceOfRouteResponse(res)) {
-        console.error("res", res);
-
-        if (res.trip.status != 0) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "No routes found.",
-              },
-            ],
-          };
-        }
-
-        const trip = res.trip;
-        const summary = trip.summary;
-        let travelTime: string;
-        if (summary.time < 60) {
-          travelTime = "less than a minute";
-        } else {
-          const minutes = Math.round(summary.time / 60);
-          travelTime = `${minutes} minutes`;
-        }
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Travel distance: ${summary.length} ${units}
-                    Travel time: ${travelTime}
-                    BBOX (W, S, N, E): [${summary.minLon}, ${summary.minLat}, ${summary.maxLon}, ${summary.maxLat}]
-                    Polyline (6 digits of precision): ${trip.legs[0].shape}`,
-            },
-          ],
-        };
-      } else {
-        console.error("Unexpected response:", res);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: "Unexpected response format.",
-            },
-          ],
-        };
-      }
-    } catch (error) {
-      console.error("Caught error:", error);
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Route calculation failed: ${JSON.stringify(error)}`,
-          },
-        ],
-      };
-    }
-  },
+  routeOverview,
 );
 
 // TODO: Variant that REQUIRES a boundary circle to implement a new fuzzy match; i.e. 3500 Kane Hill Rd, Harborcreek, PA is not technically correct but should work

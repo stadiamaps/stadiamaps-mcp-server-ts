@@ -32,21 +32,23 @@ function geocodingToolResult(
     };
   }
 
-  const res = envelope.features.map((feature) => {
-    let location: string | null | undefined;
-    if (feature.properties.formattedAddressLine) {
-      location = feature.properties.formattedAddressLine;
-    } else {
-      location = feature.properties.coarseLocation;
-    }
+  const res = envelope.features
+    .map((feature) => {
+      let location: string | null | undefined;
+      if (feature.properties.formattedAddressLine) {
+        location = feature.properties.formattedAddressLine;
+      } else {
+        location = feature.properties.coarseLocation;
+      }
 
-    return [
-      `Name: ${feature.properties?.name}`,
-      `GeoJSON Geometry: ${JSON.stringify(feature.geometry)}`,
-      `Location: ${location || "unknown"}`,
-      `Additional information: ${JSON.stringify(feature.properties.addendum)}`,
-    ].join("\n")
-  }).join("\n---\n");
+      return [
+        `Name: ${feature.properties?.name}`,
+        `GeoJSON Geometry: ${JSON.stringify(feature.geometry)}`,
+        `Location: ${location || "unknown"}`,
+        `Additional information: ${JSON.stringify(feature.properties.addendum)}`,
+      ].join("\n");
+    })
+    .join("\n---\n");
 
   return {
     content: [
@@ -68,7 +70,7 @@ export async function coarseLookup({
     boundaryCountry: countryFilter,
     lang,
     layers: ["coarse"],
-    size: 3
+    size: 3,
   });
 
   return geocodingToolResult(res);

@@ -1,7 +1,7 @@
 import { GeospatialApi } from "@stadiamaps/api";
 import { apiConfig } from "../config.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import {Coordinates} from "../index.js";
+import { Coordinates } from "../types.js";
 
 const miscApi = new GeospatialApi(apiConfig);
 

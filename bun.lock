@@ -5,7 +5,7 @@
       "name": "stadiamaps-mcp-server",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.12.1",
-        "@stadiamaps/api": "^8.0.0",
+        "@stadiamaps/api": "^8.0.1",
         "zod": "^3.25.58",
       },
       "devDependencies": {
@@ -18,7 +18,7 @@
   "packages": {
     "@modelcontextprotocol/sdk": ["@modelcontextprotocol/sdk@1.12.1", "", { "dependencies": { "ajv": "^6.12.6", "content-type": "^1.0.5", "cors": "^2.8.5", "cross-spawn": "^7.0.5", "eventsource": "^3.0.2", "express": "^5.0.1", "express-rate-limit": "^7.5.0", "pkce-challenge": "^5.0.0", "raw-body": "^3.0.0", "zod": "^3.23.8", "zod-to-json-schema": "^3.24.1" } }, "sha512-KG1CZhZfWg+u8pxeM/mByJDScJSrjjxLc8fwQqbsS8xCjBmQfMNEBTotYdNanKekepnfRI85GtgQlctLFpcYPw=="],
 
-    "@stadiamaps/api": ["@stadiamaps/api@8.0.0", "", { "dependencies": { "isomorphic-fetch": "^3.0.0" } }, "sha512-ddBjzEcX3o/aMIFiwnCyfjPhmnfyYvrL0qSphlb5ahs9akw0KDQ0ZrIi9tiiZQGuj+HfhjaGySvNgTmVwG7htA=="],
+    "@stadiamaps/api": ["@stadiamaps/api@8.0.1", "", { "dependencies": { "isomorphic-fetch": "^3.0.0" } }, "sha512-y2COQ1ZB2AgjRmGqzsoNSaPOjz2LBEfHG07354J7lBCm9vvWfEcbExjnm398xKVHsj1/eYcQz0OxL+Qdl+QX4g=="],
 
     "@types/node": ["@types/node@22.15.31", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-jnVe5ULKl6tijxUhvQeNbQG/84fHfg+yMak02cT8QVhBx/F05rAVxCGBYYTh2EKz22D6JF5ktXuNwdx7b9iEGw=="],
 

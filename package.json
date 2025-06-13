@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@stadiamaps/api": "^8.0.0",
+    "@stadiamaps/api": "^8.0.1",
     "zod": "^3.25.58"
   },
   "devDependencies": {
