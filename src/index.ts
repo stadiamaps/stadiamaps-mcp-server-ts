@@ -11,6 +11,12 @@ import {
   placeSearch,
 } from "./tools/geocoding.js";
 import { routeOverview } from "./tools/routing.js";
+import {
+    DEFAULT_STYLE,
+    staticMapCentered,
+    staticMapWithMarker,
+    staticRouteMap,
+} from "./tools/staticMaps.js";
 
 const server = new McpServer({
   name: "stadia-maps",
@@ -162,7 +168,128 @@ server.tool(
 
 // TODO: Variant that REQUIRES a boundary circle to implement a new fuzzy match; i.e. 3500 Kane Hill Rd, Harborcreek, PA is not technically correct but should work
 
-// TODO: (Cacheable?) static map!
+// Static Maps Tools
+server.tool(
+  "static-map-centered",
+  "Generate a basic map centered on a location. Returns a PNG image.",
+  {
+    style: z
+      .string()
+      .describe("The map style to use (e.g., outdoors, alidade_smooth).")
+      .default(DEFAULT_STYLE),
+    lat: z
+      .number()
+      .min(-90)
+      .max(90)
+      .describe("The latitude of the center point."),
+    lon: z
+      .number()
+      .min(-180)
+      .max(180)
+      .describe("The longitude of the center point."),
+    zoom: z.number().min(0).max(20).describe("The zoom level (0-20)."),
+    size: z
+      .string()
+      .describe(
+        "The size of the image in pixels, format: 'widthxheight' (e.g., '800x600').",
+      ),
+  },
+  staticMapCentered,
+);
+
+server.tool(
+  "static-map-with-marker",
+  "Generate a map with a marker at a specific location. Returns a PNG image.",
+  {
+    style: z
+      .string()
+      .describe("The map style to use (e.g., outdoors, alidade_smooth).")
+      .default(DEFAULT_STYLE),
+    lat: z
+      .number()
+      .min(-90)
+      .max(90)
+      .describe("The latitude of the marker location."),
+    lon: z
+      .number()
+      .min(-180)
+      .max(180)
+      .describe("The longitude of the marker location."),
+    zoom: z.number().min(0).max(20).describe("The zoom level (0-20)."),
+    size: z
+      .string()
+      .describe(
+        "The size of the image in pixels, format: 'widthxheight' (e.g., '800x600').",
+      ),
+    label: z.string().describe("Optional label for the marker.").optional(),
+    color: z
+      .string()
+      .describe("Optional color for the marker (hex code or color name).")
+      .optional(),
+    markerStyle: z
+      .string()
+      .describe("Optional custom marker style or URL to a custom marker image.")
+      .optional(),
+  },
+  staticMapWithMarker,
+);
+
+server.tool(
+  "static-route-map",
+  "Generate a map showing a route from an encoded polyline. Returns a PNG image.",
+  {
+    style: z
+      .string()
+      .describe("The map style to use (e.g., outdoors, alidade_smooth).")
+      .default(DEFAULT_STYLE),
+    encodedPolyline: z
+      .string()
+      .describe("The encoded polyline representing the route (precision 6)."),
+    size: z
+      .string()
+      .describe(
+        "The size of the image in pixels, format: widthxheight (e.g. 800x400).",
+      ),
+    strokeColor: z
+      .string()
+      .describe("Optional color for the route line (hex code or CSS color name; e.g. FFFFFF or blue).")
+      .optional(),
+    strokeWidth: z
+      .number()
+      .describe("Optional width for the route line in pixels.")
+      .optional(),
+    markers: z
+      .array(
+        z.object({
+          lat: z
+            .number()
+            .min(-90)
+            .max(90)
+            .describe("The latitude of the marker."),
+          lon: z
+            .number()
+            .min(-180)
+            .max(180)
+            .describe("The longitude of the marker."),
+          label: z
+            .string()
+            .describe("Optional label for the marker (one character limit; supports most emoji).")
+            .optional(),
+          color: z
+            .string()
+            .describe("Optional color for the marker (hex code or CSS color name; e.g. FFFFFF or blue).")
+            .optional(),
+          markerStyle: z
+            .string()
+            .describe("Optional custom marker style or URL.")
+            .optional(),
+        }),
+      )
+      .describe("Optional markers to add to the map.")
+      .optional(),
+  },
+  staticRouteMap,
+);
 
 async function main() {
   const transport = new StdioServerTransport();
