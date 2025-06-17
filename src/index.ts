@@ -2,8 +2,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { CostingModel, DistanceUnit } from "@stadiamaps/api";
-import { Coordinates } from "./types.js";
 import { timeAndZoneInfo } from "./tools/tz.js";
 import {
   addressGeocode,
@@ -12,11 +10,25 @@ import {
 } from "./tools/geocoding.js";
 import { routeOverview } from "./tools/routing.js";
 import {
-    DEFAULT_STYLE,
     staticMapCentered,
     staticMapWithMarker,
     staticRouteMap,
 } from "./tools/staticMaps.js";
+import {
+    latitudeSchema,
+    longitudeSchema,
+    coordinatesSchema,
+    countryFilterSchema,
+    languageSchema,
+    mapStyleSchema,
+    mapSizeSchema,
+    zoomSchema,
+    markerLabelSchema,
+    markerColorSchema,
+    markerStyleSchema,
+    costingSchema,
+    unitsSchema,
+} from "./schemas.js";
 
 const server = new McpServer({
   name: "stadia-maps",
@@ -35,8 +47,8 @@ server.tool(
   "time-and-zone-info",
   "Get the current time and zone info at any point (geographic coordinates). Output includes includes the standard UTC offset, special offset currently in effect (typically but not always Daylight Saving Time), IANA TZID, and the current timestamp in RFC 28222 format.",
   {
-    lat: z.number().min(-90).max(90).describe("The latitude of the point."),
-    lon: z.number().min(-180).max(180).describe("The longitude of the point."),
+    lat: latitudeSchema,
+    lon: longitudeSchema,
   },
   timeAndZoneInfo,
 );
@@ -50,22 +62,8 @@ server.tool(
       .describe(
         "The name of the area (e.g. New York, Berlin, or Kesklinn). You can search for place names using any name, regardless of the lang parameter.",
       ),
-    countryFilter: z
-      .array(
-        z
-          .string()
-          .length(3)
-          .describe(
-            "An ISO 3166-1 alpha-3 country code to limit the search to (e.g. USA, DEU, EST).",
-          ),
-      )
-      .optional(),
-    lang: z
-      .string()
-      .min(2)
-      .describe(
-        "A BCP-47 language tag (may just be the language) to localize the results in (e.g. en, de, et).",
-      ),
+    countryFilter: countryFilterSchema,
+    lang: languageSchema,
   },
   coarseLookup,
 );
@@ -79,22 +77,8 @@ server.tool(
       .describe(
         "The address text. Use local formatting and order when possible.",
       ),
-    countryFilter: z
-      .array(
-        z
-          .string()
-          .length(3)
-          .describe(
-            "An ISO 3166-1 alpha-3 country code to limit the search to (e.g. USA, DEU, EST).",
-          ),
-      )
-      .optional(),
-    lang: z
-      .string()
-      .min(2)
-      .describe(
-        "A BCP-47 language tag (may just be the language) to localize the results in (e.g. en, de, et).",
-      ),
+    countryFilter: countryFilterSchema,
+    lang: languageSchema,
   },
   addressGeocode,
 );
@@ -108,34 +92,10 @@ server.tool(
       .describe(
         "The name of the place to search for (e.g. restaurant, park, museum).",
       ),
-    countryFilter: z
-      .array(
-        z
-          .string()
-          .length(3)
-          .describe(
-            "An ISO 3166-1 alpha-3 country code to limit the search to (e.g. USA, DEU, EST).",
-          ),
-      )
-      .optional(),
-    lang: z
-      .string()
-      .min(2)
-      .describe(
-        "A BCP-47 language tag (may just be the language) to localize the results in (e.g. en, de, et).",
-      ),
-    focusPointLat: z
-      .number()
-      .min(-90)
-      .max(90)
-      .describe("The latitude to focus the search on.")
-      .optional(),
-    focusPointLon: z
-      .number()
-      .min(-180)
-      .max(180)
-      .describe("The longitude to focus the search on.")
-      .optional(),
+    countryFilter: countryFilterSchema,
+    lang: languageSchema,
+    focusPointLat: latitudeSchema.optional(),
+    focusPointLon: longitudeSchema.optional(),
   },
   placeSearch,
 );
@@ -145,23 +105,10 @@ server.tool(
   "Get high-level routing information between two or more locations. Includes travel time, distance, and an encoded polyline of the route.",
   {
     locations: z
-      .array(
-        z
-          .object({
-            lat: z.number().describe("The latitude of the location"),
-            lon: z.number().describe("The longitude of the location"),
-          })
-          .describe("A place to visit along the route"),
-      )
+      .array(coordinatesSchema)
       .min(2),
-    costing: z
-      .nativeEnum(CostingModel)
-      .describe(
-        "The method of travel to use when routing (auto = automobile).",
-      ),
-    units: z
-      .nativeEnum(DistanceUnit)
-      .describe("The unit to report distances in."),
+    costing: costingSchema,
+    units: unitsSchema,
   },
   routeOverview,
 );
@@ -173,26 +120,11 @@ server.tool(
   "static-map-centered",
   "Generate a basic map centered on a location. Returns a PNG image.",
   {
-    style: z
-      .string()
-      .describe("The map style to use (e.g., outdoors, alidade_smooth).")
-      .default(DEFAULT_STYLE),
-    lat: z
-      .number()
-      .min(-90)
-      .max(90)
-      .describe("The latitude of the center point."),
-    lon: z
-      .number()
-      .min(-180)
-      .max(180)
-      .describe("The longitude of the center point."),
-    zoom: z.number().min(0).max(20).describe("The zoom level (0-20)."),
-    size: z
-      .string()
-      .describe(
-        "The size of the image in pixels, format: 'widthxheight' (e.g., '800x600').",
-      ),
+    style: mapStyleSchema,
+    lat: latitudeSchema,
+    lon: longitudeSchema,
+    zoom: zoomSchema,
+    size: mapSizeSchema,
   },
   staticMapCentered,
 );
@@ -201,35 +133,14 @@ server.tool(
   "static-map-with-marker",
   "Generate a map with a marker at a specific location. Returns a PNG image.",
   {
-    style: z
-      .string()
-      .describe("The map style to use (e.g., outdoors, alidade_smooth).")
-      .default(DEFAULT_STYLE),
-    lat: z
-      .number()
-      .min(-90)
-      .max(90)
-      .describe("The latitude of the marker location."),
-    lon: z
-      .number()
-      .min(-180)
-      .max(180)
-      .describe("The longitude of the marker location."),
-    zoom: z.number().min(0).max(20).describe("The zoom level (0-20)."),
-    size: z
-      .string()
-      .describe(
-        "The size of the image in pixels, format: 'widthxheight' (e.g., '800x600').",
-      ),
-    label: z.string().describe("Optional label for the marker.").optional(),
-    color: z
-      .string()
-      .describe("Optional color for the marker (hex code or color name).")
-      .optional(),
-    markerStyle: z
-      .string()
-      .describe("Optional custom marker style or URL to a custom marker image.")
-      .optional(),
+    style: mapStyleSchema,
+    lat: latitudeSchema,
+    lon: longitudeSchema,
+    zoom: zoomSchema,
+    size: mapSizeSchema,
+    label: markerLabelSchema,
+    color: markerColorSchema,
+    markerStyle: markerStyleSchema,
   },
   staticMapWithMarker,
 );
@@ -238,18 +149,11 @@ server.tool(
   "static-route-map",
   "Generate a map showing a route from an encoded polyline. Returns a PNG image.",
   {
-    style: z
-      .string()
-      .describe("The map style to use (e.g., outdoors, alidade_smooth).")
-      .default(DEFAULT_STYLE),
+    style: mapStyleSchema,
     encodedPolyline: z
       .string()
       .describe("The encoded polyline representing the route (precision 6)."),
-    size: z
-      .string()
-      .describe(
-        "The size of the image in pixels, format: widthxheight (e.g. 800x400).",
-      ),
+    size: mapSizeSchema,
     strokeColor: z
       .string()
       .describe("Optional color for the route line (hex code or CSS color name; e.g. FFFFFF or blue).")
@@ -261,28 +165,11 @@ server.tool(
     markers: z
       .array(
         z.object({
-          lat: z
-            .number()
-            .min(-90)
-            .max(90)
-            .describe("The latitude of the marker."),
-          lon: z
-            .number()
-            .min(-180)
-            .max(180)
-            .describe("The longitude of the marker."),
-          label: z
-            .string()
-            .describe("Optional label for the marker (one character limit; supports most emoji).")
-            .optional(),
-          color: z
-            .string()
-            .describe("Optional color for the marker (hex code or CSS color name; e.g. FFFFFF or blue).")
-            .optional(),
-          markerStyle: z
-            .string()
-            .describe("Optional custom marker style or URL.")
-            .optional(),
+          lat: latitudeSchema,
+          lon: longitudeSchema,
+          label: markerLabelSchema,
+          color: markerColorSchema,
+          markerStyle: markerStyleSchema,
         }),
       )
       .describe("Optional markers to add to the map.")
