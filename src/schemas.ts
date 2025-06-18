@@ -53,29 +53,29 @@ export const geocodingCommonSchema = z.object({
 // Static maps schemas
 export const mapStyleSchema = z
   .string()
-  .describe("The map style to use (e.g., outdoors, alidade_smooth).")
+  .describe("The Stadia Maps style slug to use (e.g., outdoors, alidade_smooth, alidade_smooth_dark).")
   .default(DEFAULT_STYLE);
 
 export const mapSizeSchema = z
   .string()
   .describe(
-    "The size of the image in pixels, format: 'widthxheight' (e.g., '600x400').",
+    "The size of the image in pixels. Format: 'widthxheight' (e.g., '600x400').",
   );
 
 export const zoomSchema = z
   .number()
   .min(0)
   .max(18)
-  .describe("The zoom level (0-18).");
+  .describe("The map zoom level.");
 
 export const markerLabelSchema = z
   .string()
-  .describe("Optional label for the marker.")
+  .describe("Optional label for the marker. This must be either a single character or supported emoji (most emoji work).")
   .optional();
 
 export const markerColorSchema = z
   .string()
-  .describe("Optional color for the marker (hex code or color name).")
+  .describe("Optional color for the marker (hex code or CSS color name; no quoting and no # prefix).")
   .optional();
 
 export const markerStyleSchema = z

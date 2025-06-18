@@ -87,12 +87,12 @@ server.tool(
 
 server.tool(
   "place-search",
-  "Search for points of interest (POIs) by name. This works best when searching for just the place name (e.g. Starbucks). Use coordinates to focus the search to a local area. For larger areas like a region, state, or country, you can append it to the name. Use the  POI data always includes geographic coordinates and may include opening hours, website, social media, and other information.",
+  "Search for points of interest (POIs) by name and get their geographic coordinates and available info about the place. Results always include geographic coordinates and may include opening hours, website, social media, and other information.",
   {
     query: z
       .string()
       .describe(
-        "The name of the place to search for (e.g. restaurant, park, museum).",
+        "The name of the place to search for (e.g. restaurant, park, museum). Use only the place name and well-known regions such as a city, state/province, or country. Local neighborhood names are less reliable as a textual filter; onsider using the focus point for these if possible.",
       ),
     ...geocodingCommonSchema.shape,
   },

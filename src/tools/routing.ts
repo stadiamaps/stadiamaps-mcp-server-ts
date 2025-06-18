@@ -25,7 +25,7 @@ export async function routeOverview({
   console.error("Generate route request...");
   const req: RouteRequest = {
     locations,
-    // directionsType: 'none',
+    directionsType: 'none',
     units,
     costing,
   };

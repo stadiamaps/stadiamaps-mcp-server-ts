@@ -9,7 +9,10 @@
   "scripts": {
     "build": "tsc && chmod 755 build/index.js",
     "lint": "prettier -c .",
-    "lint:fix": "prettier --write ."
+    "lint:fix": "prettier --write .",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
@@ -19,7 +22,10 @@
   "devDependencies": {
     "@types/node": "^22.15.31",
     "prettier": "3.5.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.8",
+    "msw": "^2.6.4",
+    "@vitest/ui": "^2.1.8"
   },
   "files": [
     "build"
