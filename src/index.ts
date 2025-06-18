@@ -12,26 +12,26 @@ import {
 } from "./tools/geocoding.js";
 import { routeOverview } from "./tools/routing.js";
 import {
-    staticMapCentered,
-    staticMapWithMarker,
-    staticRouteMap,
+  staticMapCentered,
+  staticMapWithMarker,
+  staticRouteMap,
 } from "./tools/staticMaps.js";
 import {
-    latitudeSchema,
-    longitudeSchema,
-    coordinatesSchema,
-    countryFilterSchema,
-    languageSchema,
-    geocodingCommonSchema,
-    focusPointSchema,
-    mapStyleSchema,
-    mapSizeSchema,
-    zoomSchema,
-    markerLabelSchema,
-    markerColorSchema,
-    markerStyleSchema,
-    costingSchema,
-    unitsSchema,
+  latitudeSchema,
+  longitudeSchema,
+  coordinatesSchema,
+  countryFilterSchema,
+  languageSchema,
+  geocodingCommonSchema,
+  focusPointSchema,
+  mapStyleSchema,
+  mapSizeSchema,
+  zoomSchema,
+  markerLabelSchema,
+  markerColorSchema,
+  markerStyleSchema,
+  costingSchema,
+  unitsSchema,
 } from "./schemas.js";
 
 const server = new McpServer({
@@ -106,11 +106,9 @@ server.tool(
     items: z
       .array(
         z.object({
-          query: z
-            .string()
-            .describe("The query text for geocoding."),
+          query: z.string().describe("The query text for geocoding."),
           ...geocodingCommonSchema.shape,
-        })
+        }),
       )
       .min(1)
       .describe("Array of unstructured geocoding items to process in bulk."),
@@ -128,27 +126,25 @@ server.tool(
           // Structured geocoding fields
           address: z
             .string()
-            .describe("The street address. Include the road and house/building number if possible (e.g. Telliskivi 60a/3)")
+            .describe(
+              "The street address. Include the road and house/building number if possible (e.g. Telliskivi 60a/3)",
+            )
             .optional(),
-          locality: z
-            .string()
-            .describe("The locality/city.")
-            .optional(),
+          locality: z.string().describe("The locality/city.").optional(),
           region: z
             .string()
-            .describe("The region/state/prefecture (first-level administrative subdivision for most of the world besides the UK).")
+            .describe(
+              "The region/state/prefecture (first-level administrative subdivision for most of the world besides the UK).",
+            )
             .optional(),
-          postalcode: z
-            .string()
-            .describe("The postal code.")
-            .optional(),
+          postalcode: z.string().describe("The postal code.").optional(),
           country: z
             .string()
             .describe("The country or dependency (e.g. US Virgin Islands).")
             .optional(),
           // Common parameters
           ...geocodingCommonSchema.shape,
-        })
+        }),
       )
       .min(1)
       .describe("Array of structured geocoding items to process in bulk."),
@@ -160,9 +156,7 @@ server.tool(
   "route-overview",
   "Get high-level routing information between two or more locations. Includes travel time, distance, and an encoded polyline of the route.",
   {
-    locations: z
-      .array(coordinatesSchema)
-      .min(2),
+    locations: z.array(coordinatesSchema).min(2),
     costing: costingSchema,
     units: unitsSchema,
   },
@@ -212,7 +206,9 @@ server.tool(
     size: mapSizeSchema,
     strokeColor: z
       .string()
-      .describe("Optional color for the route line (hex code or CSS color name; e.g. FFFFFF or blue).")
+      .describe(
+        "Optional color for the route line (hex code or CSS color name; e.g. FFFFFF or blue).",
+      )
       .optional(),
     strokeWidth: z
       .number()

@@ -15,10 +15,12 @@ export const longitudeSchema = z
   .max(180)
   .describe("The longitude of the point.");
 
-export const coordinatesSchema = z.object({
-  lat: latitudeSchema,
-  lon: longitudeSchema,
-}).describe("A geographic coordinate pair.");
+export const coordinatesSchema = z
+  .object({
+    lat: latitudeSchema,
+    lon: longitudeSchema,
+  })
+  .describe("A geographic coordinate pair.");
 
 // Geocoding schemas
 export const countryFilterSchema = z
@@ -39,10 +41,13 @@ export const languageSchema = z
     "A BCP-47 language tag (may just be the language) to localize the results in (e.g. en, de, et).",
   );
 
-export const focusPointSchema = z.object({
-  lat: latitudeSchema,
-  lon: longitudeSchema,
-}).optional().describe("Optional geographic coordinates to focus the search around.");
+export const focusPointSchema = z
+  .object({
+    lat: latitudeSchema,
+    lon: longitudeSchema,
+  })
+  .optional()
+  .describe("Optional geographic coordinates to focus the search around.");
 
 export const geocodingCommonSchema = z.object({
   countryFilter: countryFilterSchema,
@@ -53,7 +58,9 @@ export const geocodingCommonSchema = z.object({
 // Static maps schemas
 export const mapStyleSchema = z
   .string()
-  .describe("The Stadia Maps style slug to use (e.g., outdoors, alidade_smooth, alidade_smooth_dark).")
+  .describe(
+    "The Stadia Maps style slug to use (e.g., outdoors, alidade_smooth, alidade_smooth_dark).",
+  )
   .default(DEFAULT_STYLE);
 
 export const mapSizeSchema = z
@@ -70,12 +77,16 @@ export const zoomSchema = z
 
 export const markerLabelSchema = z
   .string()
-  .describe("Optional label for the marker. This must be either a single character or supported emoji (most emoji work).")
+  .describe(
+    "Optional label for the marker. This must be either a single character or supported emoji (most emoji work).",
+  )
   .optional();
 
 export const markerColorSchema = z
   .string()
-  .describe("Optional color for the marker (hex code or CSS color name; no quoting and no # prefix).")
+  .describe(
+    "Optional color for the marker (hex code or CSS color name; no quoting and no # prefix).",
+  )
   .optional();
 
 export const markerStyleSchema = z
@@ -86,9 +97,7 @@ export const markerStyleSchema = z
 // Routing schemas
 export const costingSchema = z
   .nativeEnum(CostingModel)
-  .describe(
-    "The method of travel to use when routing (auto = automobile).",
-  );
+  .describe("The method of travel to use when routing (auto = automobile).");
 
 export const unitsSchema = z
   .nativeEnum(DistanceUnit)

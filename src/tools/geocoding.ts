@@ -128,37 +128,49 @@ export type BulkStructuredGeocodeParams = {
   items: Array<BulkStructuredGeocodeItem>;
 };
 
-type BulkGeocodeItemType = BulkUnstructuredGeocodeItem | BulkStructuredGeocodeItem;
+type BulkGeocodeItemType =
+  | BulkUnstructuredGeocodeItem
+  | BulkStructuredGeocodeItem;
 
 function bulkGeocodingToolResult(
   responses: Array<BulkSearchResponse>,
-  invalidItems: Array<{item: BulkGeocodeItemType, error: string}> = []
+  invalidItems: Array<{ item: BulkGeocodeItemType; error: string }> = [],
 ): CallToolResult {
   // Filter out any failed requests and extract the features
   console.error(JSON.stringify(responses));
   const successfulResults = responses
-    .filter(response => response.status === 200 && response.response?.features && response.response.features.length > 0)
-    .flatMap(response => {
+    .filter(
+      (response) =>
+        response.status === 200 &&
+        response.response?.features &&
+        response.response.features.length > 0,
+    )
+    .flatMap((response) => {
       if (!response.response) return [];
 
-      return response.response.features.map(feature => {
-        return {
-          label: feature.properties?.label,
-          geometry: feature.geometry,
-          matchType: feature.properties?.matchType,
-          addendum: feature.properties?.addendum
-        };
-      // Slice to keep only the first element in the array;
-      // we request a few more to enable dedupe, but only keep the first one.
-      }).slice(0, 1);
+      return response.response.features
+        .map((feature) => {
+          return {
+            label: feature.properties?.label,
+            geometry: feature.geometry,
+            matchType: feature.properties?.matchType,
+            addendum: feature.properties?.addendum,
+          };
+          // Slice to keep only the first element in the array;
+          // we request a few more to enable dedupe, but only keep the first one.
+        })
+        .slice(0, 1);
     });
 
   // Get failed responses
   const failedResponses = responses
-    .filter(response => response.status !== 200 || !response.response?.features?.length)
-    .map(response => ({
+    .filter(
+      (response) =>
+        response.status !== 200 || !response.response?.features?.length,
+    )
+    .map((response) => ({
       status: response.status,
-      message: response.msg || "No results found"
+      message: response.msg || "No results found",
     }));
 
   // Combine all results
@@ -168,25 +180,28 @@ function bulkGeocodingToolResult(
       totalRequests: responses.length + invalidItems.length,
       successfulRequests: successfulResults.length,
       failedRequests: failedResponses.length,
-      invalidItems: invalidItems.length > 0 ? invalidItems.map(i => ({
-        item: i.item,
-        error: i.error
-      })) : undefined
-    }
+      invalidItems:
+        invalidItems.length > 0
+          ? invalidItems.map((i) => ({
+              item: i.item,
+              error: i.error,
+            }))
+          : undefined,
+    },
   };
 
   return {
     content: [
       {
         type: "text",
-        text: JSON.stringify(result)
-      }
-    ]
+        text: JSON.stringify(result),
+      },
+    ],
   };
 }
 
 export async function bulkUnstructuredGeocode({
-  items
+  items,
 }: BulkUnstructuredGeocodeParams): Promise<CallToolResult> {
   if (!items || items.length === 0) {
     return {
@@ -200,9 +215,9 @@ export async function bulkUnstructuredGeocode({
   }
 
   // All items are valid by type definition (query is required)
-  const bulkRequests = items.map(item => {
+  const bulkRequests = items.map((item) => {
     const request: BulkRequest = {
-      endpoint: BulkRequestEndpointEnum.V1Search
+      endpoint: BulkRequestEndpointEnum.V1Search,
     };
 
     // Unstructured query
@@ -220,11 +235,14 @@ export async function bulkUnstructuredGeocode({
   console.error(bulkRequests);
 
   try {
-    const responses = await geocodeApi.searchBulk({ bulkRequest: bulkRequests });
+    const responses = await geocodeApi.searchBulk({
+      bulkRequest: bulkRequests,
+    });
     return bulkGeocodingToolResult(responses, []);
   } catch (error: unknown) {
     console.error("Error in bulk unstructured geocoding:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return {
       content: [
         {
@@ -237,7 +255,7 @@ export async function bulkUnstructuredGeocode({
 }
 
 export async function bulkStructuredGeocode({
-  items
+  items,
 }: BulkStructuredGeocodeParams): Promise<CallToolResult> {
   if (!items || items.length === 0) {
     return {
@@ -252,18 +270,24 @@ export async function bulkStructuredGeocode({
 
   // Filter and validate items
   const validItems: Array<BulkStructuredGeocodeItem> = [];
-  const invalidItems: Array<{item: BulkStructuredGeocodeItem, error: string}> = [];
+  const invalidItems: Array<{
+    item: BulkStructuredGeocodeItem;
+    error: string;
+  }> = [];
 
-  items.forEach(item => {
+  items.forEach((item) => {
     // Validate that we have at least one structured field
-    if (!item.address &&
-        !item.locality &&
-        !item.region &&
-        !item.postalcode &&
-        !item.country) {
+    if (
+      !item.address &&
+      !item.locality &&
+      !item.region &&
+      !item.postalcode &&
+      !item.country
+    ) {
       invalidItems.push({
         item,
-        error: "At least one structured field is required for structured geocoding"
+        error:
+          "At least one structured field is required for structured geocoding",
       });
       return;
     }
@@ -277,16 +301,19 @@ export async function bulkStructuredGeocode({
       content: [
         {
           type: "text",
-          text: "All geocoding items are invalid: " +
-            invalidItems.map(i => `${JSON.stringify(i.item)}: ${i.error}`).join(", "),
+          text:
+            "All geocoding items are invalid: " +
+            invalidItems
+              .map((i) => `${JSON.stringify(i.item)}: ${i.error}`)
+              .join(", "),
         },
       ],
     };
   }
 
-  const bulkRequests = validItems.map(item => {
+  const bulkRequests = validItems.map((item) => {
     const request: BulkRequest = {
-      endpoint: BulkRequestEndpointEnum.V1SearchStructured
+      endpoint: BulkRequestEndpointEnum.V1SearchStructured,
     };
 
     // Structured query
@@ -306,11 +333,14 @@ export async function bulkStructuredGeocode({
   });
 
   try {
-    const responses = await geocodeApi.searchBulk({ bulkRequest: bulkRequests });
+    const responses = await geocodeApi.searchBulk({
+      bulkRequest: bulkRequests,
+    });
     return bulkGeocodingToolResult(responses, invalidItems);
   } catch (error: unknown) {
     console.error("Error in bulk structured geocoding:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return {
       content: [
         {

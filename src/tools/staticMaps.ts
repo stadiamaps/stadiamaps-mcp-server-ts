@@ -1,4 +1,4 @@
-import {API_KEY} from "../config.js";
+import { API_KEY } from "../config.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 // Default map style
@@ -53,7 +53,10 @@ export type StaticRouteMapParams = {
 /**
  * Helper function to generate a static map image and return it as a base64 encoded string
  */
-async function generateStaticMap(payload: any, style: string): Promise<CallToolResult> {
+async function generateStaticMap(
+  payload: any,
+  style: string,
+): Promise<CallToolResult> {
   try {
     if (!API_KEY) {
       throw new Error("API key is not configured");
@@ -62,19 +65,18 @@ async function generateStaticMap(payload: any, style: string): Promise<CallToolR
     const url = `${STATIC_MAPS_BASE_URL}/${style}?api_key=${API_KEY}`;
     payload.size = `${payload.size}@2x`;
 
-    const response = await fetch(
-      url,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify(payload),
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP code: ${response.status}.\nPayload: ${JSON.stringify(payload)}`);
+      throw new Error(
+        `HTTP code: ${response.status}.\nPayload: ${JSON.stringify(payload)}`,
+      );
     }
 
     // Get the image as a buffer
@@ -88,7 +90,7 @@ async function generateStaticMap(payload: any, style: string): Promise<CallToolR
         {
           type: "image",
           data: base64Image,
-          mimeType: "image/png"
+          mimeType: "image/png",
         },
       ],
     };
