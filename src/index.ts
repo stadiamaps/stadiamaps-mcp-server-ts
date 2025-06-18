@@ -5,6 +5,8 @@ import { z } from "zod";
 import { timeAndZoneInfo } from "./tools/tz.js";
 import {
   addressGeocode,
+  bulkStructuredGeocode,
+  bulkUnstructuredGeocode,
   coarseLookup,
   placeSearch,
 } from "./tools/geocoding.js";
@@ -20,6 +22,8 @@ import {
     coordinatesSchema,
     countryFilterSchema,
     languageSchema,
+    geocodingCommonSchema,
+    focusPointSchema,
     mapStyleSchema,
     mapSizeSchema,
     zoomSchema,
@@ -62,8 +66,7 @@ server.tool(
       .describe(
         "The name of the area (e.g. New York, Berlin, or Kesklinn). You can search for place names using any name, regardless of the lang parameter.",
       ),
-    countryFilter: countryFilterSchema,
-    lang: languageSchema,
+    ...geocodingCommonSchema.shape,
   },
   coarseLookup,
 );
@@ -77,8 +80,7 @@ server.tool(
       .describe(
         "The address text. Use local formatting and order when possible.",
       ),
-    countryFilter: countryFilterSchema,
-    lang: languageSchema,
+    ...geocodingCommonSchema.shape,
   },
   addressGeocode,
 );
@@ -92,12 +94,66 @@ server.tool(
       .describe(
         "The name of the place to search for (e.g. restaurant, park, museum).",
       ),
-    countryFilter: countryFilterSchema,
-    lang: languageSchema,
-    focusPointLat: latitudeSchema.optional(),
-    focusPointLon: longitudeSchema.optional(),
+    ...geocodingCommonSchema.shape,
   },
   placeSearch,
+);
+
+server.tool(
+  "bulk-unstructured-geocode",
+  "Perform multiple unstructured geocoding operations in a single request. Returns results as a JSON list.",
+  {
+    items: z
+      .array(
+        z.object({
+          query: z
+            .string()
+            .describe("The query text for geocoding."),
+          ...geocodingCommonSchema.shape,
+        })
+      )
+      .min(1)
+      .describe("Array of unstructured geocoding items to process in bulk."),
+  },
+  bulkUnstructuredGeocode,
+);
+
+server.tool(
+  "bulk-structured-geocode",
+  "Perform multiple structured geocoding operations in a single request. Returns results as a JSON list.",
+  {
+    items: z
+      .array(
+        z.object({
+          // Structured geocoding fields
+          address: z
+            .string()
+            .describe("The street address. Include the road and house/building number if possible (e.g. Telliskivi 60a/3)")
+            .optional(),
+          locality: z
+            .string()
+            .describe("The locality/city.")
+            .optional(),
+          region: z
+            .string()
+            .describe("The region/state/prefecture (first-level administrative subdivision for most of the world besides the UK).")
+            .optional(),
+          postalcode: z
+            .string()
+            .describe("The postal code.")
+            .optional(),
+          country: z
+            .string()
+            .describe("The country or dependency (e.g. US Virgin Islands).")
+            .optional(),
+          // Common parameters
+          ...geocodingCommonSchema.shape,
+        })
+      )
+      .min(1)
+      .describe("Array of structured geocoding items to process in bulk."),
+  },
+  bulkStructuredGeocode,
 );
 
 server.tool(

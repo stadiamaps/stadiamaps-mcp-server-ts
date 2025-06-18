@@ -39,6 +39,17 @@ export const languageSchema = z
     "A BCP-47 language tag (may just be the language) to localize the results in (e.g. en, de, et).",
   );
 
+export const focusPointSchema = z.object({
+  lat: latitudeSchema,
+  lon: longitudeSchema,
+}).optional().describe("Optional geographic coordinates to focus the search around.");
+
+export const geocodingCommonSchema = z.object({
+  countryFilter: countryFilterSchema,
+  lang: languageSchema,
+  focusPoint: focusPointSchema,
+});
+
 // Static maps schemas
 export const mapStyleSchema = z
   .string()

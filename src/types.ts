@@ -9,3 +9,12 @@ export type Coordinates = {
   lat: number;
   lon: number;
 };
+
+/**
+ * Common geocoding parameters
+ */
+export type GeocodingCommonParams = {
+  countryFilter?: Array<string>;
+  lang: string;
+  focusPoint?: Coordinates;
+};
