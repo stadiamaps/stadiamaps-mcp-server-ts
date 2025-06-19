@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CostingModel, DistanceUnit } from "@stadiamaps/api";
+import { CostingModel, DistanceUnit, IsochroneCostingModel } from "@stadiamaps/api";
 import { DEFAULT_STYLE } from "./tools/staticMaps.js";
 
 // Coordinate schemas
@@ -102,3 +102,45 @@ export const costingSchema = z
 export const unitsSchema = z
   .nativeEnum(DistanceUnit)
   .describe("The unit to report distances in.");
+
+// Isochrone schemas
+export const isochroneCostingSchema = z
+  .nativeEnum(IsochroneCostingModel)
+  .describe("The method of travel to use for isochrone calculation (auto = automobile).");
+
+export const contourSchema = z
+  .object({
+    time: z
+      .number()
+      .positive()
+      .describe("The time in minutes for the contour. Mutually exclusive with distance.")
+      .optional(),
+    distance: z
+      .number()
+      .positive()
+      .describe("The distance in km for the contour. Mutually exclusive with time.")
+      .optional(),
+  })
+  .refine(
+    (data) => (data.time !== undefined) !== (data.distance !== undefined),
+    {
+      message: "Either time or distance must be specified, but not both.",
+    }
+  )
+  .describe("A contour definition with either time or distance constraint.");
+
+export const contoursSchema = z
+  .array(contourSchema)
+  .min(1)
+  .max(4)
+  .describe("Array of 1-4 contours. All contours must be of the same type (all time or all distance).")
+  .refine(
+    (contours) => {
+      const hasTime = contours.some(c => c.time !== undefined);
+      const hasDistance = contours.some(c => c.distance !== undefined);
+      return !(hasTime && hasDistance);
+    },
+    {
+      message: "All contours must be of the same type (either all time-based or all distance-based).",
+    }
+  );

@@ -11,6 +11,7 @@ import {
   placeSearch,
 } from "./tools/geocoding.js";
 import { routeOverview } from "./tools/routing.js";
+import { isochrone } from "./tools/isochrone.js";
 import {
   staticMapCentered,
   staticMapWithMarker,
@@ -32,6 +33,8 @@ import {
   markerStyleSchema,
   costingSchema,
   unitsSchema,
+  isochroneCostingSchema,
+  contoursSchema,
 } from "./schemas.js";
 
 const server = new McpServer({
@@ -161,6 +164,17 @@ server.tool(
     units: unitsSchema,
   },
   routeOverview,
+);
+
+server.tool(
+  "isochrone",
+  "Generate isochrone contours showing areas reachable within specified time or distance constraints from a single location. Returns GeoJSON polygons representing the reachable areas.",
+  {
+    location: coordinatesSchema,
+    costing: isochroneCostingSchema,
+    contours: contoursSchema,
+  },
+  isochrone,
 );
 
 // TODO: Variant that REQUIRES a boundary circle to implement a new fuzzy match; i.e. 3500 Kane Hill Rd, Harborcreek, PA is not technically correct but should work
