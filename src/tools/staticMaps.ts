@@ -1,5 +1,6 @@
 import { API_KEY } from "../config.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { handleToolError } from "../errorHandler.js";
 
 // Default map style
 export const DEFAULT_STYLE = "outdoors";
@@ -57,50 +58,46 @@ async function generateStaticMap(
   payload: any,
   style: string,
 ): Promise<CallToolResult> {
-  try {
-    const url = `${STATIC_MAPS_BASE_URL}/${style}?api_key=${API_KEY}`;
-    payload.size = `${payload.size}@2x`;
+  return handleToolError(
+    async () => {
+      const url = `${STATIC_MAPS_BASE_URL}/${style}?api_key=${API_KEY}`;
+      payload.size = `${payload.size}@2x`;
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP code: ${response.status}.\nPayload: ${JSON.stringify(payload)}`,
-      );
-    }
-
-    // Get the image as a buffer
-    const imageBuffer = await response.arrayBuffer();
-
-    // Convert to base64
-    const base64Image = Buffer.from(imageBuffer).toString("base64");
-
-    return {
-      content: [
-        {
-          type: "image",
-          data: base64Image,
-          mimeType: "image/png",
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      ],
-    };
-  } catch (error) {
-    console.error("Static map generation error:", error);
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Failed to generate static map: ${error instanceof Error ? error.message : String(error)}`,
-        },
-      ],
-    };
-  }
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP code: ${response.status}.\nPayload: ${JSON.stringify(payload)}`,
+        );
+      }
+
+      // Get the image as a buffer
+      const imageBuffer = await response.arrayBuffer();
+
+      // Convert to base64
+      const base64Image = Buffer.from(imageBuffer).toString("base64");
+
+      return {
+        content: [
+          {
+            type: "image",
+            data: base64Image,
+            mimeType: "image/png",
+          },
+        ],
+      };
+    },
+    {
+      contextMessage: "Failed to generate static map",
+      enableLogging: true,
+    },
+  );
 }
 
 /**

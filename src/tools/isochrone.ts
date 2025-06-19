@@ -9,6 +9,7 @@ import {
 import { apiConfig } from "../config.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { Coordinates } from "../types.js";
+import { handleToolError } from "../errorHandler.js";
 
 const routeApi = new RoutingApi(apiConfig);
 
@@ -33,7 +34,7 @@ function isochroneToolResult(response: IsochroneResponse): CallToolResult {
   const results = response.features
     .map((feature, index) => {
       const properties = feature.properties;
-      if (!properties) return "Invalid result (no properties)";
+      if (!properties) return `Invalid result (no properties): ${index}`;
 
       const contourInfo = `Contour ${properties.contour}`;
 
@@ -69,35 +70,32 @@ export async function isochrone({
   costing,
   contours,
 }: IsochroneParams): Promise<CallToolResult> {
-  try {
-    const request: IsochroneRequest = {
-      locations: [location],
-      costing,
-      contours,
-    };
-
-    const response = await routeApi.isochrone({ isochroneRequest: request });
-
-    if (instanceOfIsochroneResponse(response)) {
-      return isochroneToolResult(response);
-    } else {
-      return {
-        content: [
-          {
-            type: "text",
-            text: "Unexpected response format from isochrone API.",
-          },
-        ],
+  return handleToolError(
+    async () => {
+      const request: IsochroneRequest = {
+        locations: [location],
+        costing,
+        contours,
       };
-    }
-  } catch (error) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Isochrone calculation failed: ${JSON.stringify(error)}`,
-        },
-      ],
-    };
-  }
+
+      const response = await routeApi.isochrone({ isochroneRequest: request });
+
+      if (instanceOfIsochroneResponse(response)) {
+        return isochroneToolResult(response);
+      } else {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Unexpected response format from isochrone API.",
+            },
+          ],
+        };
+      }
+    },
+    {
+      contextMessage: "Isochrone calculation failed",
+      enableLogging: true,
+    },
+  );
 }

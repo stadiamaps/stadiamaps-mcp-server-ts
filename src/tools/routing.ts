@@ -8,6 +8,7 @@ import {
 import { apiConfig } from "../config.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { Coordinates } from "../types.js";
+import { handleToolError } from "../errorHandler.js";
 
 const routeApi = new RoutingApi(apiConfig);
 
@@ -31,67 +32,63 @@ export async function routeOverview({
   };
   console.error("req", req);
 
-  try {
-    const res = await routeApi.route({ routeRequest: req });
+  return handleToolError(
+    async () => {
+      const res = await routeApi.route({ routeRequest: req });
 
-    if (instanceOfRouteResponse(res)) {
-      console.error("res", res);
+      if (instanceOfRouteResponse(res)) {
+        console.error("res", res);
 
-      if (res.trip.status != 0) {
+        if (res.trip.status != 0) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "No routes found.",
+              },
+            ],
+          };
+        }
+
+        const trip = res.trip;
+        const summary = trip.summary;
+        let travelTime: string;
+        if (summary.time < 60) {
+          travelTime = "less than a minute";
+        } else {
+          const minutes = Math.round(summary.time / 60);
+          travelTime = `${minutes} minutes`;
+        }
+
         return {
           content: [
             {
               type: "text",
-              text: "No routes found.",
+              text: [
+                `Travel distance: ${summary.length} ${units}`,
+                `Travel time: ${travelTime}`,
+                `BBOX (W,S,N,E): [${summary.minLon}, ${summary.minLat}, ${summary.maxLon}, ${summary.maxLat}]`,
+                `Polyline (6 digits of precision): ${trip.legs[0].shape}`,
+              ].join("\n"),
+            },
+          ],
+        };
+      } else {
+        console.error("Unexpected response:", res);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Unexpected response format.",
             },
           ],
         };
       }
-
-      const trip = res.trip;
-      const summary = trip.summary;
-      let travelTime: string;
-      if (summary.time < 60) {
-        travelTime = "less than a minute";
-      } else {
-        const minutes = Math.round(summary.time / 60);
-        travelTime = `${minutes} minutes`;
-      }
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: [
-              `Travel distance: ${summary.length} ${units}`,
-              `Travel time: ${travelTime}`,
-              `BBOX (W,S,N,E): [${summary.minLon}, ${summary.minLat}, ${summary.maxLon}, ${summary.maxLat}]`,
-              `Polyline (6 digits of precision): ${trip.legs[0].shape}`,
-            ].join("\n"),
-          },
-        ],
-      };
-    } else {
-      console.error("Unexpected response:", res);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: "Unexpected response format.",
-          },
-        ],
-      };
-    }
-  } catch (error) {
-    console.error("Caught error:", error);
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Route calculation failed: ${JSON.stringify(error)}`,
-        },
-      ],
-    };
-  }
+    },
+    {
+      contextMessage: "Route calculation failed",
+      enableLogging: true,
+    },
+  );
 }

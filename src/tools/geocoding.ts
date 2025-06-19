@@ -8,6 +8,7 @@ import {
 import { apiConfig } from "../config.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { GeocodingCommonParams } from "../types.js";
+import { handleToolError } from "../errorHandler.js";
 
 const geocodeApi = new GeocodingApi(apiConfig);
 
@@ -64,25 +65,22 @@ export async function coarseLookup({
   countryFilter,
   lang,
 }: UnstructuredGeocodeParams): Promise<CallToolResult> {
-  try {
-    const res = await geocodeApi.searchV2({
-      text: query,
-      boundaryCountry: countryFilter,
-      lang,
-      layers: ["coarse"],
-    });
+  return handleToolError(
+    async () => {
+      const res = await geocodeApi.searchV2({
+        text: query,
+        boundaryCountry: countryFilter,
+        lang,
+        layers: ["coarse"],
+      });
 
-    return geocodingToolResult(res);
-  } catch (error) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Geocoding failed: ${JSON.stringify(error)}`,
-        },
-      ],
-    };
-  }
+      return geocodingToolResult(res);
+    },
+    {
+      contextMessage: "Geocoding failed",
+      enableLogging: true,
+    },
+  );
 }
 
 export async function addressGeocode({
@@ -90,25 +88,22 @@ export async function addressGeocode({
   countryFilter,
   lang,
 }: UnstructuredGeocodeParams): Promise<CallToolResult> {
-  try {
-    const res = await geocodeApi.searchV2({
-      text: query,
-      boundaryCountry: countryFilter,
-      lang,
-      layers: ["address"],
-    });
+  return handleToolError(
+    async () => {
+      const res = await geocodeApi.searchV2({
+        text: query,
+        boundaryCountry: countryFilter,
+        lang,
+        layers: ["address"],
+      });
 
-    return geocodingToolResult(res);
-  } catch (error) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Geocoding failed: ${JSON.stringify(error)}`,
-        },
-      ],
-    };
-  }
+      return geocodingToolResult(res);
+    },
+    {
+      contextMessage: "Geocoding failed",
+      enableLogging: true,
+    },
+  );
 }
 
 export async function placeSearch({
@@ -117,27 +112,24 @@ export async function placeSearch({
   lang,
   focusPoint,
 }: PlaceSearchParams): Promise<CallToolResult> {
-  try {
-    const res = await geocodeApi.searchV2({
-      text: query,
-      boundaryCountry: countryFilter,
-      lang,
-      layers: ["poi"],
-      focusPointLat: focusPoint?.lat,
-      focusPointLon: focusPoint?.lon,
-    });
+  return handleToolError(
+    async () => {
+      const res = await geocodeApi.searchV2({
+        text: query,
+        boundaryCountry: countryFilter,
+        lang,
+        layers: ["poi"],
+        focusPointLat: focusPoint?.lat,
+        focusPointLon: focusPoint?.lon,
+      });
 
-    return geocodingToolResult(res);
-  } catch (error) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Geocoding failed: ${JSON.stringify(error)}`,
-        },
-      ],
-    };
-  }
+      return geocodingToolResult(res);
+    },
+    {
+      contextMessage: "Geocoding failed",
+      enableLogging: true,
+    },
+  );
 }
 
 export type BulkUnstructuredGeocodeItem = GeocodingCommonParams & {
@@ -267,24 +259,18 @@ export async function bulkUnstructuredGeocode({
 
   console.error(bulkRequests);
 
-  try {
-    const responses = await geocodeApi.searchBulk({
-      bulkRequest: bulkRequests,
-    });
-    return bulkGeocodingToolResult(responses, []);
-  } catch (error: unknown) {
-    console.error("Error in bulk unstructured geocoding:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Error performing bulk unstructured geocoding: ${errorMessage}`,
-        },
-      ],
-    };
-  }
+  return handleToolError(
+    async () => {
+      const responses = await geocodeApi.searchBulk({
+        bulkRequest: bulkRequests,
+      });
+      return bulkGeocodingToolResult(responses, []);
+    },
+    {
+      contextMessage: "Error performing bulk unstructured geocoding",
+      enableLogging: true,
+    },
+  );
 }
 
 export async function bulkStructuredGeocode({
@@ -365,22 +351,16 @@ export async function bulkStructuredGeocode({
     return request;
   });
 
-  try {
-    const responses = await geocodeApi.searchBulk({
-      bulkRequest: bulkRequests,
-    });
-    return bulkGeocodingToolResult(responses, invalidItems);
-  } catch (error: unknown) {
-    console.error("Error in bulk structured geocoding:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Error performing bulk structured geocoding: ${errorMessage}`,
-        },
-      ],
-    };
-  }
+  return handleToolError(
+    async () => {
+      const responses = await geocodeApi.searchBulk({
+        bulkRequest: bulkRequests,
+      });
+      return bulkGeocodingToolResult(responses, invalidItems);
+    },
+    {
+      contextMessage: "Error performing bulk structured geocoding",
+      enableLogging: true,
+    },
+  );
 }
