@@ -64,14 +64,25 @@ export async function coarseLookup({
   countryFilter,
   lang,
 }: UnstructuredGeocodeParams): Promise<CallToolResult> {
-  const res = await geocodeApi.searchV2({
-    text: query,
-    boundaryCountry: countryFilter,
-    lang,
-    layers: ["coarse"],
-  });
+  try {
+    const res = await geocodeApi.searchV2({
+      text: query,
+      boundaryCountry: countryFilter,
+      lang,
+      layers: ["coarse"],
+    });
 
-  return geocodingToolResult(res);
+    return geocodingToolResult(res);
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Geocoding failed: ${JSON.stringify(error)}`,
+        },
+      ],
+    };
+  }
 }
 
 export async function addressGeocode({
@@ -79,14 +90,25 @@ export async function addressGeocode({
   countryFilter,
   lang,
 }: UnstructuredGeocodeParams): Promise<CallToolResult> {
-  const res = await geocodeApi.searchV2({
-    text: query,
-    boundaryCountry: countryFilter,
-    lang,
-    layers: ["address"],
-  });
+  try {
+    const res = await geocodeApi.searchV2({
+      text: query,
+      boundaryCountry: countryFilter,
+      lang,
+      layers: ["address"],
+    });
 
-  return geocodingToolResult(res);
+    return geocodingToolResult(res);
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Geocoding failed: ${JSON.stringify(error)}`,
+        },
+      ],
+    };
+  }
 }
 
 export async function placeSearch({
@@ -95,16 +117,27 @@ export async function placeSearch({
   lang,
   focusPoint,
 }: PlaceSearchParams): Promise<CallToolResult> {
-  const res = await geocodeApi.searchV2({
-    text: query,
-    boundaryCountry: countryFilter,
-    lang,
-    layers: ["poi"],
-    focusPointLat: focusPoint?.lat,
-    focusPointLon: focusPoint?.lon,
-  });
+  try {
+    const res = await geocodeApi.searchV2({
+      text: query,
+      boundaryCountry: countryFilter,
+      lang,
+      layers: ["poi"],
+      focusPointLat: focusPoint?.lat,
+      focusPointLon: focusPoint?.lon,
+    });
 
-  return geocodingToolResult(res);
+    return geocodingToolResult(res);
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Geocoding failed: ${JSON.stringify(error)}`,
+        },
+      ],
+    };
+  }
 }
 
 export type BulkUnstructuredGeocodeItem = GeocodingCommonParams & {

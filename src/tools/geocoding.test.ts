@@ -10,6 +10,9 @@ import {
   type BulkUnstructuredGeocodeParams,
   type BulkStructuredGeocodeParams,
 } from "./geocoding.js";
+import { server } from "../test/setup.js";
+import { http, HttpResponse } from "msw";
+import { geocodingEmptyFixture } from "../test/fixtures/geocodingEmpty.js";
 
 describe("Geocoding Tools", () => {
   describe("coarseLookup", () => {
@@ -133,7 +136,68 @@ describe("Geocoding Tools", () => {
     });
   });
 
-  // TODO: Error handling test
+  describe("Empty and Error Response Handling", () => {
+    it("should handle empty geocoding results", async () => {
+      // Override the default handler for this test
+      server.use(
+        http.get("*/v2/search*", () => {
+          return HttpResponse.json(geocodingEmptyFixture);
+        }),
+      );
+
+      const params: UnstructuredGeocodeParams = {
+        query: "nonexistent location",
+        lang: "en",
+      };
+
+      const result = await coarseLookup(params);
+
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toBe("No results found.");
+    });
+
+    it("should handle geocoding API errors gracefully", async () => {
+      // Override the default handler for this test to return an error
+      server.use(
+        http.get("*/v2/search*", () => {
+          return HttpResponse.json(
+            { error: "Invalid request parameters" },
+            { status: 400 },
+          );
+        }),
+      );
+
+      const params: UnstructuredGeocodeParams = {
+        query: "test query",
+        lang: "en",
+      };
+
+      const result = await addressGeocode(params);
+
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain("Geocoding failed:");
+    });
+
+    it("should handle empty results for place search", async () => {
+      // Override the default handler for this test
+      server.use(
+        http.get("*/v2/search*", () => {
+          return HttpResponse.json(geocodingEmptyFixture);
+        }),
+      );
+
+      const params: PlaceSearchParams = {
+        query: "nonexistent place",
+        lang: "en",
+        focusPoint: { lat: 37.7749, lon: -122.4194 },
+      };
+
+      const result = await placeSearch(params);
+
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toBe("No results found.");
+    });
+  });
 
   describe("Response formatting", () => {
     it("should format geocoding results correctly", async () => {

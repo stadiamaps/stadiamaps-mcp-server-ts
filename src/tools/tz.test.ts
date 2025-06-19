@@ -81,8 +81,13 @@ describe("Timezone Tools", () => {
         lon: -122.4194,
       };
 
-      // This should throw an error since we're mocking a 400 response
-      await expect(timeAndZoneInfo(coordinates)).rejects.toThrow();
+      // This should return an error result since we're mocking a 400 response
+      const result = await timeAndZoneInfo(coordinates);
+
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content[0]).toHaveProperty("type", "text");
+      expect(result.content[0].text).toContain("Timezone lookup failed");
     });
   });
 
