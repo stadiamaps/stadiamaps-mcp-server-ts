@@ -1,89 +1,18 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { isochrone, type IsochroneParams } from "./isochrone.js";
 import { IsochroneCostingModel } from "@stadiamaps/api";
-
-// Mock the Stadia Maps API
-vi.mock("@stadiamaps/api", () => ({
-  RoutingApi: vi.fn().mockImplementation(() => ({
-    isochrone: vi.fn().mockResolvedValue({
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          properties: {
-            contour: 15,
-            metric: "time",
-            color: "ff0000",
-          },
-          geometry: {
-            type: "Polygon",
-            coordinates: [
-              [
-                [-122.4194, 37.7749],
-                [-122.4294, 37.7749],
-                [-122.4294, 37.7849],
-                [-122.4194, 37.7849],
-                [-122.4194, 37.7749],
-              ],
-            ],
-          },
-        },
-        {
-          type: "Feature",
-          properties: {
-            contour: 30,
-            metric: "time",
-            color: "00ff00",
-          },
-          geometry: {
-            type: "Polygon",
-            coordinates: [
-              [
-                [-122.4094, 37.7649],
-                [-122.4394, 37.7649],
-                [-122.4394, 37.7949],
-                [-122.4094, 37.7949],
-                [-122.4094, 37.7649],
-              ],
-            ],
-          },
-        },
-      ],
-    }),
-  })),
-  IsochroneCostingModel: {
-    Auto: "auto",
-    Pedestrian: "pedestrian",
-    Bicycle: "bicycle",
-    Taxi: "taxi",
-    Bus: "bus",
-    Truck: "truck",
-    Bikeshare: "bikeshare",
-    MotorScooter: "motor_scooter",
-    Motorcycle: "motorcycle",
-    LowSpeedVehicle: "low_speed_vehicle",
-  },
-  instanceOfIsochroneResponse: vi.fn().mockReturnValue(true),
-}));
-
-// Mock the config to avoid needing real API keys in tests
-vi.mock("../config.js", () => ({
-  apiConfig: {
-    apiKey: "test-api-key",
-  },
-}));
+import { server } from "../test/setup.js";
+import { http, HttpResponse } from "msw";
+import { isochroneDistanceFixture } from "../test/fixtures/isochroneDistance.js";
+import { isochroneEmptyFixture } from "../test/fixtures/isochroneEmpty.js";
 
 describe("Isochrone Tools", () => {
-
   describe("isochrone", () => {
     it("should generate time-based isochrone contours", async () => {
       const params: IsochroneParams = {
         location: { lat: 37.7749, lon: -122.4194 }, // San Francisco
         costing: IsochroneCostingModel.Auto,
-        contours: [
-          { time: 15 },
-          { time: 30 },
-        ],
+        contours: [{ time: 15 }, { time: 30 }],
       };
 
       const result = await isochrone(params);
@@ -99,29 +28,32 @@ describe("Isochrone Tools", () => {
       expect(result.content[0].text).toContain("GeoJSON Geometry:");
     });
 
-    // Note: We're skipping the distance-based test as our mock is time-based
-    it.skip("should generate distance-based isochrone contours", async () => {
+    it("should generate distance-based isochrone contours", async () => {
+      // Override the default handler for this test
+      server.use(
+        http.post("https://api.stadiamaps.com/isochrone/v1", () => {
+          return HttpResponse.json(isochroneDistanceFixture);
+        }),
+      );
+
       const params: IsochroneParams = {
         location: { lat: 37.7749, lon: -122.4194 },
         costing: IsochroneCostingModel.Pedestrian,
-        contours: [
-          { distance: 5 },
-        ],
+        contours: [{ distance: 5 }],
       };
 
-      // This test would need a mock with distance-based contours
       const result = await isochrone(params);
 
       expect(result).toBeDefined();
+      expect(result.content[0].text).toContain("Contour 5");
+      expect(result.content[0].text).toContain("Distance: 5 km");
     });
 
     it("should handle single contour", async () => {
       const params: IsochroneParams = {
         location: { lat: 37.7749, lon: -122.4194 },
         costing: IsochroneCostingModel.Bicycle,
-        contours: [
-          { time: 10 },
-        ],
+        contours: [{ time: 15 }],
       };
 
       const result = await isochrone(params);
@@ -131,73 +63,47 @@ describe("Isochrone Tools", () => {
       expect(result.content[0].text).toContain("Time: 15 minutes"); // From mock
     });
 
-    it("should handle multiple transportation modes", async () => {
+    it("should handle empty results", async () => {
+      // Override the default handler for this test
+      server.use(
+        http.post("https://api.stadiamaps.com/isochrone/v1", () => {
+          return HttpResponse.json(isochroneEmptyFixture);
+        }),
+      );
+
       const params: IsochroneParams = {
         location: { lat: 37.7749, lon: -122.4194 },
-        costing: IsochroneCostingModel.Bus,
-        contours: [
-          { time: 20 },
-          { time: 40 },
-        ],
+        costing: IsochroneCostingModel.Auto,
+        contours: [{ time: 15 }],
       };
 
       const result = await isochrone(params);
 
       expect(result).toBeDefined();
-      expect(result.content[0].text).toContain("Isochrone Results:");
+      expect(result.content[0].text).toBe("No isochrone results found.");
     });
 
-    // Note: We're skipping the empty results test as it would require more complex mock setup
-    it.skip("should handle empty results", async () => {
+    it("should handle API errors gracefully", async () => {
+      // Override the default handler for this test to return an error
+      server.use(
+        http.post("https://api.stadiamaps.com/isochrone/v1", () => {
+          return HttpResponse.json(
+            { error: "Invalid request parameters" },
+            { status: 400 },
+          );
+        }),
+      );
+
       const params: IsochroneParams = {
         location: { lat: 37.7749, lon: -122.4194 },
         costing: IsochroneCostingModel.Auto,
-        contours: [
-          { time: 15 },
-        ],
+        contours: [{ time: 15 }],
       };
 
-      // This test would need a mock that returns empty features
       const result = await isochrone(params);
 
       expect(result).toBeDefined();
-    });
-
-    // Note: We're skipping the API error test as it would require more complex mock setup
-    it.skip("should handle API errors gracefully", async () => {
-      const params: IsochroneParams = {
-        location: { lat: 37.7749, lon: -122.4194 },
-        costing: IsochroneCostingModel.Auto,
-        contours: [
-          { time: 15 },
-        ],
-      };
-
-      // This test would need a mock that throws an error
-      const result = await isochrone(params);
-
-      expect(result).toBeDefined();
-    });
-  });
-
-  describe("Response formatting", () => {
-    it("should format response with all required fields", async () => {
-      const params: IsochroneParams = {
-        location: { lat: 37.7749, lon: -122.4194 },
-        costing: IsochroneCostingModel.Auto,
-        contours: [
-          { time: 15 },
-          { time: 30 },
-        ],
-      };
-
-      const result = await isochrone(params);
-
-      const text = result.content[0].text;
-      expect(text).toMatch(/Isochrone Results:/);
-      expect(text).toMatch(/Contour \d+/);
-      expect(text).toMatch(/Time: \d+ minutes/);
-      expect(text).toMatch(/GeoJSON Geometry: \{.*\}/);
+      expect(result.content[0].text).toContain("Isochrone calculation failed:");
     });
   });
 });

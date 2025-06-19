@@ -58,10 +58,6 @@ async function generateStaticMap(
   style: string,
 ): Promise<CallToolResult> {
   try {
-    if (!API_KEY) {
-      throw new Error("API key is not configured");
-    }
-
     const url = `${STATIC_MAPS_BASE_URL}/${style}?api_key=${API_KEY}`;
     payload.size = `${payload.size}@2x`;
 

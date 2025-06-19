@@ -18,9 +18,7 @@ export type IsochroneParams = {
   contours: Contour[];
 };
 
-function isochroneToolResult(
-  response: IsochroneResponse,
-): CallToolResult {
+function isochroneToolResult(response: IsochroneResponse): CallToolResult {
   if (!response.features || !response.features.length) {
     return {
       content: [
@@ -35,24 +33,26 @@ function isochroneToolResult(
   const results = response.features
     .map((feature, index) => {
       const properties = feature.properties;
-      const contourInfo = properties?.contour !== undefined
-        ? `Contour ${properties.contour}`
-        : `Feature ${index + 1}`;
+      if (!properties) return "Invalid result (no properties)";
 
-      let metricInfo = '';
-      if (properties?.metric === 'time' && properties?.contour !== undefined) {
+      const contourInfo = `Contour ${properties.contour}`;
+
+      let metricInfo = "";
+      if (properties?.metric === "time") {
         metricInfo = `Time: ${properties.contour} minutes`;
-      } else if (properties?.metric === 'distance' && properties?.contour !== undefined) {
+      } else if (properties?.metric === "distance") {
         metricInfo = `Distance: ${properties.contour} km`;
       }
 
       return [
         `${contourInfo}`,
-        metricInfo ? `${metricInfo}` : '',
+        metricInfo ? `${metricInfo}` : "",
         `GeoJSON Geometry: ${JSON.stringify(feature.geometry)}`,
-      ].filter(Boolean).join('\n');
+      ]
+        .filter(Boolean)
+        .join("\n");
     })
-    .join('\n---\n');
+    .join("\n---\n");
 
   return {
     content: [

@@ -10,5 +10,6 @@ export default defineConfig({
       enabled: true,
       tsconfig: "./tsconfig.json",
     },
+    setupFiles: ["./src/test/setup.ts"],
   },
 });

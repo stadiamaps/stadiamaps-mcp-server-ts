@@ -1,32 +1,15 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { timeAndZoneInfo } from "./tz.js";
 import { type Coordinates } from "../types.js";
-
-// Mock the Stadia Maps API
-vi.mock("@stadiamaps/api", () => ({
-  GeospatialApi: vi.fn().mockImplementation(() => ({
-    tzLookup: vi.fn().mockResolvedValue({
-      tzId: "America/Los_Angeles",
-      baseUtcOffset: -28800,
-      dstOffset: 3600,
-      localRfc2822Timestamp: "Mon, 01 Jun 2024 12:00:00 -0700",
-    }),
-  })),
-}));
-
-// Mock the config to avoid needing real API keys in tests
-vi.mock("../config.js", () => ({
-  apiConfig: {
-    apiKey: "test-api-key",
-  },
-}));
+import { server } from "../test/setup.js";
+import { http, HttpResponse } from "msw";
 
 describe("Timezone Tools", () => {
   describe("timeAndZoneInfo", () => {
     it("should get timezone information for coordinates", async () => {
       const coordinates: Coordinates = {
         lat: 37.7749,
-        lon: -122.4194, // San Francisco
+        lon: -122.4194,
       };
 
       const result = await timeAndZoneInfo(coordinates);
@@ -76,12 +59,32 @@ describe("Timezone Tools", () => {
 
       expect(result.content[0].text).toMatch(/Current time \(RFC 2822\): .*/);
       expect(result.content[0].text).toContain(
-        "Mon, 01 Jun 2024 12:00:00 -0700",
+        "Mon, 01 Jun 2024 09:00:00 -0700",
       );
     });
   });
 
-  // TODO: Error handling test
+  describe("Error handling", () => {
+    it("should handle API errors gracefully", async () => {
+      // Override the default handler for this test to return an error
+      server.use(
+        http.get("*/tz/lookup/v1*", () => {
+          return HttpResponse.json(
+            { error: "Invalid coordinates" },
+            { status: 400 },
+          );
+        }),
+      );
+
+      const coordinates: Coordinates = {
+        lat: 37.7749,
+        lon: -122.4194,
+      };
+
+      // This should throw an error since we're mocking a 400 response
+      await expect(timeAndZoneInfo(coordinates)).rejects.toThrow();
+    });
+  });
 
   describe("Response formatting", () => {
     it("should format response with all required fields", async () => {

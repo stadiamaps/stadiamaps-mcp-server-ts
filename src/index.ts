@@ -95,7 +95,7 @@ server.tool(
     query: z
       .string()
       .describe(
-        "The name of the place to search for (e.g. restaurant, park, museum). Use only the place name and well-known regions such as a city, state/province, or country. Local neighborhood names are less reliable as a textual filter; onsider using the focus point for these if possible.",
+        "The name of the place to search for (e.g. restaurant, park, museum). Use only the place name and well-known regions such as a city, state/province, or country. Local neighborhood names are less reliable as a textual filter; consider using the focus point for these if possible. Do NOT try multiple names for the same place in a single search (i.e. a Korean name and an English name for the same place). Use separate searches if necessary.",
       ),
     ...geocodingCommonSchema.shape,
   },

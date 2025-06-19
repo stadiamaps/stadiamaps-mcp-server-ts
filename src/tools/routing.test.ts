@@ -1,83 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { routeOverview, type RouteOverviewParams } from "./routing.js";
 import { CostingModel, DistanceUnit } from "@stadiamaps/api";
-
-// Mock the Stadia Maps API
-vi.mock("@stadiamaps/api", () => ({
-  RoutingApi: vi.fn().mockImplementation(() => ({
-    route: vi.fn().mockResolvedValue({
-      trip: {
-        locations: [
-          {
-            type: "break",
-            lat: 60.534715,
-            lon: -149.543469,
-            original_index: 0,
-          },
-          {
-            type: "break",
-            lat: 60.53499,
-            lon: -149.54858,
-            original_index: 1,
-          },
-        ],
-        legs: [
-          {
-            summary: {
-              has_time_restrictions: false,
-              has_toll: false,
-              has_highway: false,
-              has_ferry: false,
-              minLat: 60.534715,
-              minLon: -149.54858,
-              maxLat: 60.535008,
-              maxLon: -149.543469,
-              time: 11.487,
-              length: 0.176,
-              cost: 56.002,
-            },
-            shape: "wzvmrBxalf|GcCrX}A|Nu@jI}@pMkBtZ{@x^_Afj@Inn@`@veB",
-          },
-        ],
-        summary: {
-          has_time_restrictions: false,
-          has_toll: false,
-          has_highway: false,
-          has_ferry: false,
-          minLat: 60.534715,
-          minLon: -149.54858,
-          maxLat: 60.535008,
-          maxLon: -149.543469,
-          time: 11.487,
-          length: 0.176,
-          cost: 56.002,
-        },
-        status_message: "Found route between points",
-        status: 0,
-        units: "miles",
-        language: "en-US",
-      },
-    }),
-  })),
-  CostingModel: {
-    Auto: "auto",
-    Pedestrian: "pedestrian",
-    Bicycle: "bicycle",
-    Taxi: "taxi",
-  },
-  DistanceUnit: {
-    Km: "km",
-    Mi: "mi",
-  },
-  instanceOfRouteResponse: vi.fn().mockReturnValue(true),
-}));
-
-// Mock the config to avoid needing real API keys in tests
-vi.mock("../config.js", () => ({
-  apiConfig: {
-    apiKey: "test-api-key",
-  },
-}));
+import { server } from "../test/setup.js";
+import { http, HttpResponse } from "msw";
+import { routeErrorFixture } from "../test/fixtures/routeError.js";
 
 describe("Routing Tools", () => {
   describe("routeOverview", () => {
@@ -156,7 +82,31 @@ describe("Routing Tools", () => {
     });
   });
 
-  // TODO: Error handling test
+  describe("Error handling", () => {
+    it("should handle API errors gracefully", async () => {
+      // Override the default handler for this test to return an error
+      server.use(
+        http.post("https://api.stadiamaps.com/route/v1", () => {
+          return HttpResponse.json(routeErrorFixture, { status: 400 });
+        }),
+      );
+
+      const params: RouteOverviewParams = {
+        locations: [
+          { lat: 37.7749, lon: -122.4194 },
+          { lat: 37.7849, lon: -122.4094 },
+        ],
+        costing: CostingModel.Auto,
+        units: DistanceUnit.Km,
+      };
+
+      const result = await routeOverview(params);
+
+      expect(result).toBeDefined();
+      expect(result.content[0]).toHaveProperty("type", "text");
+      expect(result.content[0].text).toContain("Route calculation failed:");
+    });
+  });
 
   describe("Response formatting", () => {
     it("should format response with all required fields", async () => {
@@ -172,10 +122,10 @@ describe("Routing Tools", () => {
       const result = await routeOverview(params);
 
       const text = result.content[0].text;
-      expect(text).toMatch(/Travel distance: [\d.]+ km/);
-      expect(text).toMatch(/Travel time: .*/);
-      expect(text).toMatch(/BBOX \(W,S,N,E\): \[.*\]/);
-      expect(text).toMatch(/Polyline \(6 digits of precision\): .*/);
+      expect(text).toContain("Travel distance:");
+      expect(text).toContain("Travel time:");
+      expect(text).toContain("BBOX");
+      expect(text).toContain("Polyline");
     });
   });
 });

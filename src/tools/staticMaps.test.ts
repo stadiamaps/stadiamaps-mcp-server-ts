@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   staticMapCentered,
   staticMapWithMarker,
@@ -7,36 +7,13 @@ import {
   type StaticMapWithMarkerParams,
   type StaticRouteMapParams,
 } from "./staticMaps.js";
-
-// Mock the config to avoid needing real API keys in tests
-vi.mock("../config.js", () => ({
-  API_KEY: "test-api-key",
-}));
-
-// Mock fetch globally for Node.js environment
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+import { server } from "../test/setup.js";
+import { http, HttpResponse } from "msw";
+import { staticMapFixture } from "../test/fixtures/staticMap.js";
 
 describe("Static Maps Tools", () => {
-  const setupSuccessfulMock = () => {
-    vi.clearAllMocks();
-
-    // Default successful fetch mock
-    const mockPngBase64 =
-      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
-    const mockPngBuffer = Buffer.from(mockPngBase64, "base64");
-
-    mockFetch.mockResolvedValue({
-      ok: true,
-      status: 200,
-      arrayBuffer: () => Promise.resolve(mockPngBuffer.buffer),
-    } as Response);
-  };
-
   describe("staticMapCentered", () => {
     it("should generate a centered static map", async () => {
-      setupSuccessfulMock();
-
       const params: StaticMapCenteredParams = {
         lat: 37.7749,
         lon: -122.4194,
@@ -91,6 +68,35 @@ describe("Static Maps Tools", () => {
       expect(result.content[0]).toHaveProperty("type", "image");
       expect(result.content[0]).toHaveProperty("data");
       expect(result.content[0]).toHaveProperty("mimeType", "image/png");
+    });
+  });
+
+  describe("Error handling", () => {
+    it("should handle API errors gracefully", async () => {
+      // Override the default handler for this test to return an error
+      server.use(
+        http.post("https://tiles.stadiamaps.com/static_cacheable/*", () => {
+          return HttpResponse.json(
+            { error: "Invalid request parameters" },
+            { status: 400 },
+          );
+        }),
+      );
+
+      const params: StaticMapCenteredParams = {
+        lat: 37.7749,
+        lon: -122.4194,
+        zoom: 12,
+        size: "400x400",
+      };
+
+      const result = await staticMapCentered(params);
+
+      expect(result).toBeDefined();
+      expect(result.content[0]).toHaveProperty("type", "text");
+      expect(result.content[0].text).toContain(
+        "Failed to generate static map:",
+      );
     });
   });
 });
