@@ -23,7 +23,6 @@ export async function routeOverview({
   costing,
   units,
 }: RouteOverviewParams): Promise<CallToolResult> {
-  console.error("Generate route request...");
   const req: RouteRequest = {
     locations,
     directionsType: "none",

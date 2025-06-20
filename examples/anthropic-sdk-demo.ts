@@ -7,6 +7,8 @@ import type {
 } from '@anthropic-ai/sdk/resources/messages';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * An example of how to set up a conversation with an Anthropic LLM,
@@ -89,7 +91,7 @@ class StadiaMapsIntegration {
                             return {
                                 tool_use_id: toolCall.id,
                                 type: 'tool_result' as const,
-                                content: typeof result.content === 'string' ? result.content : JSON.stringify(result.content),
+                                content: processToolResultContent(result.content),
                             };
                         } catch (error) {
                             return {
@@ -117,6 +119,53 @@ class StadiaMapsIntegration {
     }
 }
 
+/**
+ * Helper function to save base64 image data to disk
+ */
+function saveBase64Image(base64Data: string, mimeType: string): string {
+    // Create a timestamp-based filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const extension = mimeType === 'image/png' ? 'png' : 'jpg';
+    const filename = `static-map-${timestamp}.${extension}`;
+    const filepath = path.join(process.cwd(), filename);
+
+    // Convert base64 to buffer and save
+    const buffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(filepath, buffer);
+
+    return filepath;
+}
+
+/**
+ * Process tool result content, handling both text and image data
+ */
+function processToolResultContent(content: any): string {
+    if (typeof content === 'string') {
+        return content;
+    }
+
+    if (Array.isArray(content)) {
+        const results: string[] = [];
+
+        for (const item of content) {
+            if (item.type === 'image' && item.data && item.mimeType) {
+                // Save the image and return the file path info
+                const filepath = saveBase64Image(item.data, item.mimeType);
+                const message = `📸 Static map image saved to: ${filepath}`;
+                console.log(message);
+                results.push(message);
+            } else {
+                // Handle other content types
+                results.push(item.type === 'string' ? item : JSON.stringify(item));
+            }
+        }
+
+        return results.join('\n');
+    }
+
+    return JSON.stringify(content);
+}
+
 function extractTextResponse(content: ContentBlock[]) {
     return content.find((c): c is TextBlock => c.type === 'text')?.text || 'No text response'
 }
@@ -132,45 +181,32 @@ async function main() {
 
         // Example 1: a simple query
         console.log('=== Simple query (current time in Tokyo) ===');
-        const response = await integration.ask(
+        const response1 = await integration.ask(
             "What time is it in Tokyo?"
         );
-        console.log(extractTextResponse(response.content));
+        console.log(extractTextResponse(response1.content));
+
+        // Example 2: Generate a static map.
+        console.log('\n=== Static map + routing ===');
+        const response2 = await integration.ask(
+            "Make me a map showing the walking route from Coffee Duck in Hongdae to the nearest 생활맥주."
+        );
+        console.log(extractTextResponse(response2.content));
+
+        // Example 3: Opening hours
+        console.log('\n=== Place information ===');
+        const response3 = await integration.ask(
+            "Is the Põhjala Tap Room open right now? Use Stadia Maps to get this information."
+        );
+        console.log(extractTextResponse(response3.content));
     } finally {
         await integration.cleanup();
     }
 }
 
-// Utility: Create a persistent session for interactive use
-class InteractiveMapsSession {
-    private integration!: StadiaMapsIntegration;
-    private initialized = false;
-
-    async start() {
-        this.integration = new StadiaMapsIntegration();
-        await this.integration.initialize();
-        this.initialized = true;
-        console.log('🗺️  Interactive maps session started!');
-    }
-
-    async ask(question: string) {
-        if (!this.initialized) await this.start();
-        return await this.integration.ask(question);
-    }
-
-    async stop() {
-        if (this.integration) {
-            await this.integration.cleanup();
-            this.initialized = false;
-            console.log('👋 Maps session ended');
-        }
-    }
-}
-
 // Export for module use
 export {
-    StadiaMapsIntegration,
-    InteractiveMapsSession
+    StadiaMapsIntegration
 };
 
 // Run examples if called directly

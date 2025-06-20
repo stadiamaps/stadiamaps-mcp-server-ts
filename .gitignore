@@ -11,3 +11,5 @@ yarn-error.log*
 
 .vscode/*
 .idea/*
+
+examples/static-map-*.png
