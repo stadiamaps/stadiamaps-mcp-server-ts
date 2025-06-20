@@ -8,18 +8,21 @@
   },
   "scripts": {
     "build": "tsc && chmod 755 build/index.js",
+    "build:examples": "cd examples && bun run build",
     "lint": "prettier -c .",
     "lint:fix": "prettier --write .",
     "test": "vitest run",
     "test:continuous": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "examples:check": "cd examples && tsc --noEmit",
+    "examples:demo": "cd examples && bun run start:anthropic-demo"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
     "@stadiamaps/api": "^8.0.1",
     "zod": "^3.25.58"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.54.0",
     "@types/node": "^22.15.31",
     "@vitest/ui": "^2.1.8",
     "msw": "^2.10.2",

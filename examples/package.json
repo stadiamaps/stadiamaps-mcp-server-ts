@@ -1,0 +1,14 @@
+{
+  "name": "stadiamaps-mcp-examples",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start:anthropic-demo": "bun run anthropic-sdk-demo.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.54.0",
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  }
+}
