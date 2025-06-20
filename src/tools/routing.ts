@@ -29,15 +29,12 @@ export async function routeOverview({
     units,
     costing,
   };
-  console.error("req", req);
 
   return handleToolError(
     async () => {
       const res = await routeApi.route({ routeRequest: req });
 
       if (instanceOfRouteResponse(res)) {
-        console.error("res", res);
-
         if (res.trip.status != 0) {
           return {
             content: [

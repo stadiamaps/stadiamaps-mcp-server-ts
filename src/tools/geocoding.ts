@@ -162,7 +162,6 @@ function bulkGeocodingToolResult(
   invalidItems: Array<{ item: BulkGeocodeItemType; error: string }> = [],
 ): CallToolResult {
   // Filter out any failed requests and extract the features
-  console.error(JSON.stringify(responses));
   const successfulResults = responses
     .filter(
       (response) =>
@@ -256,8 +255,6 @@ export async function bulkUnstructuredGeocode({
 
     return request;
   });
-
-  console.error(bulkRequests);
 
   return handleToolError(
     async () => {
