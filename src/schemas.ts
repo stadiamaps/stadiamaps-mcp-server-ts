@@ -51,27 +51,34 @@ export const focusPointSchema = z
     lon: longitudeSchema,
   })
   .optional()
-  .describe("Optional geographic coordinates to focus the search around.");
+  .describe(
+    "Geographic coordinates to focus the search around. Provide this whenever possible.",
+  );
+
+export const geocodingUnstructuredQuery = z
+  .string()
+  .describe(
+    "The address or place name to search for. Use local formatting and order when possible. When searching for a POI name (e.g. 'Starbucks'), you will get better results with a focus point and filters. Avoid spelling out precise locations (e.g. 'Starbucks, Downtown Greenville'); this is acceptable for large areas though (e.g. 'Paris, France' is OK, as is 'Louvre, Paris'). Make multiple queries or use general knowledge when necessary to get a more relevant result.",
+  );
 
 export const geocodingCommonSchema = z.object({
   countryFilter: countryFilterSchema,
   lang: languageSchema,
   focusPoint: focusPointSchema,
+  layer: z
+    .enum(["address", "poi", "coarse"])
+    .describe(
+      "The layer to search in. Coarse searches for areas such as neighborhoods, cities, states, and countries. Address searches for street addresses. POI searches for points of interest including restaurants, parks, shops, and museums. Defaults to all layers if not specified.",
+    )
+    .optional(),
 });
 
 // Static maps schemas
 export const mapStyleSchema = z
-  .string()
-  .describe(
-    "The Stadia Maps style slug to use (e.g., outdoors, alidade_smooth, alidade_smooth_dark).",
-  )
+  // See https://docs.stadiamaps.com/themes/ for more styles!
+  .enum(["outdoors", "alidade_smooth", "alidade_smooth_dark"])
+  .describe("The Stadia Maps style slug to use.")
   .default(DEFAULT_STYLE);
-
-export const mapSizeSchema = z
-  .string()
-  .describe(
-    "The size of the image in pixels. Format: 'widthxheight' (e.g., '600x400').",
-  );
 
 export const zoomSchema = z
   .number()

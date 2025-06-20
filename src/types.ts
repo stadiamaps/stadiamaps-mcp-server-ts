@@ -17,4 +17,5 @@ export type GeocodingCommonParams = {
   countryFilter?: Array<string>;
   lang: string;
   focusPoint?: Coordinates;
+  layer?: string;
 };

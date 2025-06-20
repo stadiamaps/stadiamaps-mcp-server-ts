@@ -94,7 +94,7 @@ First, attach an Excel sheet in Claude Desktop which has a few addresses in a co
 **Prompt:** Geocode all the addresses in this spreadsheet. Add the geocoded latitude and longitude as new columns in the sheet.
 
 At the time of this writing, Claude cannot generate a spreadsheet attachment
-directly, but it *can* generate an HTML page or other code which generates it for you!
+directly, but it _can_ generate an HTML page or other code which generates it for you!
 In fact, Claude Desktop may actually ask you if you want an Excel sheet download,
 but it will just go ahead and generate this for you instead.
 
@@ -107,16 +107,17 @@ which can overcome some of these limitations to provide a delightful user experi
 ### Customize it!
 
 Just like a human, LLMs do better when given the right tools for the job.
-And just like a master craftsman, you'll probably need *some* expert knowledge
+And just like a master craftsman, you'll probably need _some_ expert knowledge
 to know how best to combine the right tools and materials.
 
-Additionally, models have a context window limit.
+Additionally, models have a context limit.
 While there are advanced techniques to squeeze more out of this,
 you can only benefit by tailoring the MCP to the specific API functionality you need.
+Not to mention, it will be _much_ cheaper for you to operate with just the tools you need
+for a specific context.
+**Tool schemas are vast majority of the context cost, in a simple demo!**
+If you build the suite out to ~10 tools, you can end up with tens of thousands of input tokens.
 
 **This project is a starting point**,
-and we've left comments throughout noting our approach to building tools,
+and we've left comments throughout [`index.ts`](src/index.ts) noting our approach to building tools,
 and how you can tailor them for your use case.
-
-If you think of something cool that you think others would like,
-let us know via an issue or PR!

@@ -56,16 +56,24 @@ export async function routeOverview({
           travelTime = `${minutes} minutes`;
         }
 
+        const route = {
+          distance: `${summary.length} ${units}`,
+          time: travelTime,
+          bbox_w_s_n_e: [
+            summary.minLon,
+            summary.minLat,
+            summary.maxLon,
+            summary.maxLat,
+          ],
+          polyline6: trip.legs[0].shape,
+        };
+
         return {
+          structuredContent: route,
           content: [
             {
               type: "text",
-              text: [
-                `Travel distance: ${summary.length} ${units}`,
-                `Travel time: ${travelTime}`,
-                `BBOX (W,S,N,E): [${summary.minLon}, ${summary.minLat}, ${summary.maxLon}, ${summary.maxLat}]`,
-                `Polyline (6 digits of precision): ${trip.legs[0].shape}`,
-              ].join("\n"),
+              text: JSON.stringify(route),
             },
           ],
         };

@@ -4,6 +4,7 @@ import {
   BulkSearchResponse,
   GeocodeResponseEnvelopePropertiesV2,
   GeocodingApi,
+  LayerId,
 } from "@stadiamaps/api";
 import { apiConfig } from "../config.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -15,8 +16,6 @@ const geocodeApi = new GeocodingApi(apiConfig);
 export type UnstructuredGeocodeParams = GeocodingCommonParams & {
   query: string;
 };
-
-export type PlaceSearchParams = UnstructuredGeocodeParams;
 
 function geocodingToolResult(
   envelope: GeocodeResponseEnvelopePropertiesV2,
@@ -60,10 +59,11 @@ function geocodingToolResult(
   };
 }
 
-export async function coarseLookup({
+export async function geocode({
   query,
   countryFilter,
   lang,
+  layer,
 }: UnstructuredGeocodeParams): Promise<CallToolResult> {
   return handleToolError(
     async () => {
@@ -71,56 +71,7 @@ export async function coarseLookup({
         text: query,
         boundaryCountry: countryFilter,
         lang,
-        layers: ["coarse"],
-      });
-
-      return geocodingToolResult(res);
-    },
-    {
-      contextMessage: "Geocoding failed",
-      enableLogging: true,
-    },
-  );
-}
-
-export async function addressGeocode({
-  query,
-  countryFilter,
-  lang,
-}: UnstructuredGeocodeParams): Promise<CallToolResult> {
-  return handleToolError(
-    async () => {
-      const res = await geocodeApi.searchV2({
-        text: query,
-        boundaryCountry: countryFilter,
-        lang,
-        layers: ["address"],
-      });
-
-      return geocodingToolResult(res);
-    },
-    {
-      contextMessage: "Geocoding failed",
-      enableLogging: true,
-    },
-  );
-}
-
-export async function placeSearch({
-  query,
-  countryFilter,
-  lang,
-  focusPoint,
-}: PlaceSearchParams): Promise<CallToolResult> {
-  return handleToolError(
-    async () => {
-      const res = await geocodeApi.searchV2({
-        text: query,
-        boundaryCountry: countryFilter,
-        lang,
-        layers: ["poi"],
-        focusPointLat: focusPoint?.lat,
-        focusPointLon: focusPoint?.lon,
+        layers: layer ? [layer as LayerId] : undefined,
       });
 
       return geocodingToolResult(res);
@@ -140,6 +91,7 @@ export type BulkUnstructuredGeocodeParams = {
   items: Array<BulkUnstructuredGeocodeItem>;
 };
 
+// Not used, but provided in case your application uses structured geocoding.
 export type BulkStructuredGeocodeItem = GeocodingCommonParams & {
   // Structured geocoding fields
   address?: string;
@@ -224,7 +176,7 @@ function bulkGeocodingToolResult(
   };
 }
 
-export async function bulkUnstructuredGeocode({
+export async function bulkGeocode({
   items,
 }: BulkUnstructuredGeocodeParams): Promise<CallToolResult> {
   if (!items || items.length === 0) {

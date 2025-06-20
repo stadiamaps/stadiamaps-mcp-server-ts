@@ -23,6 +23,7 @@ or via the command line (i.e. `export STADIA_MAPS_API_KEY=YOUR-API-KEY` in most 
 We'll use [bun](https://bun.sh/) as it's fast and able to execute TypeScript scripts directly.
 
 1. First, build the main MCP server:
+
    ```shell
    cd .. && bun run build
    ```

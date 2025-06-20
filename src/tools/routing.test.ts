@@ -22,10 +22,12 @@ describe("Routing Tools", () => {
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content[0]).toHaveProperty("type", "text");
-      expect(result.content[0].text).toContain("Travel distance:");
-      expect(result.content[0].text).toContain("Travel time:");
-      expect(result.content[0].text).toContain("BBOX");
-      expect(result.content[0].text).toContain("Polyline");
+      // @ts-ignore
+      const json_value = JSON.parse(result.content[0].text);
+      expect(json_value.distance).toBeDefined();
+      expect(json_value.time).toBeDefined();
+      expect(json_value.bbox_w_s_n_e).toBeDefined();
+      expect(json_value.polyline6).toBeDefined();
     });
 
     it("should format travel time correctly for short durations", async () => {
@@ -42,9 +44,6 @@ describe("Routing Tools", () => {
       const result = await routeOverview(params);
 
       expect(result.content[0].text).toContain("less than a minute");
-      expect(result.content[0].text).toContain(
-        "[-149.54858, 60.534715, -149.543469, 60.535008]",
-      );
     });
 
     it("should include bounding box information", async () => {
@@ -59,9 +58,10 @@ describe("Routing Tools", () => {
 
       const result = await routeOverview(params);
 
-      expect(result.content[0].text).toContain(
-        "[-149.54858, 60.534715, -149.543469, 60.535008]",
-      );
+      // @ts-ignore
+      expect(JSON.parse(result.content[0].text).bbox_w_s_n_e).toEqual([
+        -149.54858, 60.534715, -149.543469, 60.535008,
+      ]);
     });
 
     it("should include encoded polyline", async () => {
@@ -76,7 +76,8 @@ describe("Routing Tools", () => {
 
       const result = await routeOverview(params);
 
-      expect(result.content[0].text).toContain(
+      // @ts-ignore
+      expect(JSON.parse(result.content[0].text).polyline6).toEqual(
         "wzvmrBxalf|GcCrX}A|Nu@jI}@pMkBtZ{@x^_Afj@Inn@`@veB",
       );
     });
@@ -105,27 +106,6 @@ describe("Routing Tools", () => {
       expect(result).toBeDefined();
       expect(result.content[0]).toHaveProperty("type", "text");
       expect(result.content[0].text).toContain("Route calculation failed:");
-    });
-  });
-
-  describe("Response formatting", () => {
-    it("should format response with all required fields", async () => {
-      const params: RouteOverviewParams = {
-        locations: [
-          { lat: 37.7749, lon: -122.4194 },
-          { lat: 37.7849, lon: -122.4094 },
-        ],
-        costing: CostingModel.Auto,
-        units: DistanceUnit.Km,
-      };
-
-      const result = await routeOverview(params);
-
-      const text = result.content[0].text;
-      expect(text).toContain("Travel distance:");
-      expect(text).toContain("Travel time:");
-      expect(text).toContain("BBOX");
-      expect(text).toContain("Polyline");
     });
   });
 });

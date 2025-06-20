@@ -9,37 +9,11 @@ export const DEFAULT_STYLE = "outdoors";
 const STATIC_MAPS_BASE_URL = "https://tiles.stadiamaps.com/static_cacheable";
 
 /**
- * Parameters for generating a centered static map
- */
-export type StaticMapCenteredParams = {
-  style?: string;
-  lat: number;
-  lon: number;
-  zoom: number;
-  size: string;
-};
-
-/**
- * Parameters for generating a static map with a marker
- */
-export type StaticMapWithMarkerParams = {
-  style?: string;
-  lat: number;
-  lon: number;
-  zoom: number;
-  size: string;
-  label?: string;
-  color?: string;
-  markerUrl?: string;
-};
-
-/**
  * Parameters for generating a static route map
  */
-export type StaticRouteMapParams = {
+export type StaticMapParams = {
   style?: string;
-  encodedPolyline: string;
-  size: string;
+  encodedPolyline?: string;
   strokeColor?: string;
   strokeWidth?: number;
   markers?: Array<{
@@ -54,14 +28,13 @@ export type StaticRouteMapParams = {
 /**
  * Helper function to generate a static map image and return it as a base64 encoded string
  */
-async function generateStaticMap(
+async function generateStaticMapAsCallToolResult(
   payload: any,
   style: string,
 ): Promise<CallToolResult> {
   return handleToolError(
     async () => {
       const url = `${STATIC_MAPS_BASE_URL}/${style}?api_key=${API_KEY}`;
-      payload.size = `${payload.size}@2x`;
 
       const response = await fetch(url, {
         method: "POST",
@@ -101,88 +74,34 @@ async function generateStaticMap(
 }
 
 /**
- * Generate a basic map centered on a location
+ * Generate a map including an optional line and markers
  */
-export async function staticMapCentered({
-  style = DEFAULT_STYLE,
-  lat,
-  lon,
-  zoom,
-  size,
-}: StaticMapCenteredParams): Promise<CallToolResult> {
-  const payload = {
-    center: {
-      latitude: lat,
-      longitude: lon,
-    },
-    zoom,
-    size,
-  };
-
-  return generateStaticMap(payload, style);
-}
-
-/**
- * Generate a map with a single marker
- */
-export async function staticMapWithMarker({
-  style = DEFAULT_STYLE,
-  lat,
-  lon,
-  zoom,
-  size,
-  label,
-  color,
-  markerUrl,
-}: StaticMapWithMarkerParams): Promise<CallToolResult> {
-  // Create marker object
-  const marker: any = {
-    lat,
-    lon,
-  };
-
-  // Add optional marker properties if provided
-  if (label) marker.label = label;
-  if (color) marker.color = color;
-  if (markerUrl) marker.style = `custom:${markerUrl}`;
-
-  const payload = {
-    center: {
-      latitude: lat,
-      longitude: lon,
-    },
-    zoom,
-    size,
-    markers: [marker],
-  };
-
-  return generateStaticMap(payload, style);
-}
-
-/**
- * Generate a map showing a route
- */
-export async function staticRouteMap({
+export async function staticMap({
   style = DEFAULT_STYLE,
   encodedPolyline,
-  size,
   strokeColor,
   strokeWidth,
   markers,
-}: StaticRouteMapParams): Promise<CallToolResult> {
-  // Create the line object
-  const line: any = {
-    shape: encodedPolyline,
-  };
-
-  // Add optional line properties if provided
-  if (strokeColor) line.stroke_color = strokeColor;
-  if (strokeWidth) line.stroke_width = strokeWidth;
-
+}: StaticMapParams): Promise<CallToolResult> {
   const payload: any = {
-    size,
-    lines: [line],
+    // Fixed at 600x400; customize as needed
+    size: "600x400@2x",
+    lines: [],
   };
+
+  // Add line if provided
+  if (encodedPolyline) {
+    // Create the line object
+    const line: any = {
+      shape: encodedPolyline,
+    };
+
+    // Add optional line properties if provided
+    if (strokeColor) line.stroke_color = strokeColor;
+    if (strokeWidth) line.stroke_width = strokeWidth;
+
+    payload.lines.push(line);
+  }
 
   // Add markers if provided
   if (markers && markers.length > 0) {
@@ -200,5 +119,5 @@ export async function staticRouteMap({
     });
   }
 
-  return generateStaticMap(payload, style);
+  return generateStaticMapAsCallToolResult(payload, style);
 }

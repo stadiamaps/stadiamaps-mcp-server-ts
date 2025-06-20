@@ -3,31 +3,16 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 
 import { timeAndZoneInfo } from "./tools/tz.js";
-import {
-  addressGeocode,
-  bulkStructuredGeocode,
-  bulkUnstructuredGeocode,
-  coarseLookup,
-  placeSearch,
-} from "./tools/geocoding.js";
+import { geocode, bulkGeocode } from "./tools/geocoding.js";
 import { routeOverview } from "./tools/routing.js";
 import { isochrone } from "./tools/isochrone.js";
-import {
-  staticMapCentered,
-  staticMapWithMarker,
-  staticRouteMap,
-} from "./tools/staticMaps.js";
+import { staticMap } from "./tools/staticMaps.js";
 import {
   latitudeSchema,
   longitudeSchema,
   coordinatesSchema,
-  countryFilterSchema,
-  languageSchema,
   geocodingCommonSchema,
-  focusPointSchema,
   mapStyleSchema,
-  mapSizeSchema,
-  zoomSchema,
   markerLabelSchema,
   markerColorSchema,
   markerStyleSchema,
@@ -35,6 +20,7 @@ import {
   unitsSchema,
   isochroneCostingSchema,
   contoursSchema,
+  geocodingUnstructuredQuery,
 } from "./schemas.js";
 
 const server = new McpServer({
@@ -45,8 +31,6 @@ const server = new McpServer({
     tools: {},
   },
 });
-
-// TODO: Set an explicit user agent? Or is that done above?
 
 // Tool setup
 
@@ -60,104 +44,42 @@ server.tool(
   timeAndZoneInfo,
 );
 
-server.tool(
-  "coarse-lookup",
-  "Get information about an area such as a neighborhood, city, state, or country. Any sort of place with an area recognized either legally or colloquially. Returns location, geographic context (e.g. which state and country a city is located in), and metadata like wikipedia ID and population.",
-  {
-    query: z
-      .string()
-      .describe(
-        "The name of the area (e.g. New York, Berlin, or Kesklinn). You can search for place names using any name, regardless of the lang parameter.",
-      ),
-    ...geocodingCommonSchema.shape,
-  },
-  coarseLookup,
-);
+const commonGeocodingDescription =
+  "Returned geographic information includes coordinates, bounding box, local context (what country, city, etc. is it in).";
 
 server.tool(
-  "address-geocode",
-  "Get the coordinates and geographic context (city, state, country, etc.) for a street address (do NOT use to look up a place by name; only by address).",
+  "geocode",
+  `Look up a street address, POI, or area. ${commonGeocodingDescription}. Additional info may include Wikipedia ID, population, opening hours, website, and more, subject to availability.`,
   {
-    query: z
-      .string()
-      .describe(
-        "The address text. Use local formatting and order when possible.",
-      ),
+    query: geocodingUnstructuredQuery,
     ...geocodingCommonSchema.shape,
   },
-  addressGeocode,
+  geocode,
 );
 
+// This tool uses our bulk geocoding API (available to Standard plans and higher).
+// It is the *unstructured* variant that assumes full text input.
+// You can modify this tool if you're looking for structured geocoding instead.
 server.tool(
-  "place-search",
-  "Search for points of interest (POIs) by name and get their geographic coordinates and available info about the place. Results always include geographic coordinates and may include opening hours, website, social media, and other information.",
-  {
-    query: z
-      .string()
-      .describe(
-        "The name of the place to search for (e.g. restaurant, park, museum). Use only the place name and well-known regions such as a city, state/province, or country. Local neighborhood names are less reliable as a textual filter; consider using the focus point for these if possible. Do NOT try multiple names for the same place in a single search (i.e. a Korean name and an English name for the same place). Use separate searches if necessary.",
-      ),
-    ...geocodingCommonSchema.shape,
-  },
-  placeSearch,
-);
-
-server.tool(
-  "bulk-unstructured-geocode",
-  "Perform multiple unstructured geocoding operations in a single request. Returns results as a JSON list.",
+  "bulk-geocode",
+  `Perform multiple address geocoding operations in a single request. Returns results as a JSON list, showing only the first result for each. Using this to geocode POIs is strongly discouraged, as many places with the same name exist; only use this for addresses. ${commonGeocodingDescription}`,
   {
     items: z
       .array(
         z.object({
-          query: z.string().describe("The query text for geocoding."),
+          query: geocodingUnstructuredQuery,
           ...geocodingCommonSchema.shape,
         }),
       )
       .min(1)
-      .describe("Array of unstructured geocoding items to process in bulk."),
+      .describe("Array of geocoding items to process in bulk."),
   },
-  bulkUnstructuredGeocode,
-);
-
-server.tool(
-  "bulk-structured-geocode",
-  "Perform multiple structured geocoding operations in a single request. Returns results as a JSON list.",
-  {
-    items: z
-      .array(
-        z.object({
-          // Structured geocoding fields
-          address: z
-            .string()
-            .describe(
-              "The street address. Include the road and house/building number if possible (e.g. Telliskivi 60a/3)",
-            )
-            .optional(),
-          locality: z.string().describe("The locality/city.").optional(),
-          region: z
-            .string()
-            .describe(
-              "The region/state/prefecture (first-level administrative subdivision for most of the world besides the UK).",
-            )
-            .optional(),
-          postalcode: z.string().describe("The postal code.").optional(),
-          country: z
-            .string()
-            .describe("The country or dependency (e.g. US Virgin Islands).")
-            .optional(),
-          // Common parameters
-          ...geocodingCommonSchema.shape,
-        }),
-      )
-      .min(1)
-      .describe("Array of structured geocoding items to process in bulk."),
-  },
-  bulkStructuredGeocode,
+  bulkGeocode,
 );
 
 server.tool(
   "route-overview",
-  "Get high-level routing information between two or more locations. Includes travel time, distance, and an encoded polyline of the route.",
+  "Get high-level routing information between two or more locations. Includes travel time, distance, and an encoded polyline of the route. The result is JSON. Be careful with polyline output as the JSON string may contain escaped backslashes!",
   {
     locations: z.array(coordinatesSchema).min(2),
     costing: costingSchema,
@@ -177,51 +99,22 @@ server.tool(
   isochrone,
 );
 
-// TODO: Variant that REQUIRES a boundary circle to implement a new fuzzy match; i.e. 3500 Kane Hill Rd, Harborcreek, PA is not technically correct but should work
-
-// Static Maps Tools
+// Static Maps; this tool is capable of a lot. If your needs are simpler, you can focus it.
 server.tool(
-  "static-map-centered",
-  "Generate a basic map centered on a location. Returns a PNG image.",
-  {
-    style: mapStyleSchema,
-    lat: latitudeSchema,
-    lon: longitudeSchema,
-    zoom: zoomSchema,
-    size: mapSizeSchema,
-  },
-  staticMapCentered,
-);
-
-server.tool(
-  "static-map-with-marker",
-  "Generate a map with a marker at a specific location. Returns a PNG image.",
-  {
-    style: mapStyleSchema,
-    lat: latitudeSchema,
-    lon: longitudeSchema,
-    zoom: zoomSchema,
-    size: mapSizeSchema,
-    label: markerLabelSchema,
-    color: markerColorSchema,
-    markerStyle: markerStyleSchema,
-  },
-  staticMapWithMarker,
-);
-
-server.tool(
-  "static-route-map",
-  "Generate a map showing a route from an encoded polyline. Returns a PNG image.",
+  "static-map",
+  "Generate a PNG map image of an area, optionally including markers and a line (e.g. to draw a route or a boundary)",
   {
     style: mapStyleSchema,
     encodedPolyline: z
       .string()
-      .describe("The encoded polyline representing the route (precision 6)."),
-    size: mapSizeSchema,
+      .describe(
+        "The encoded polyline representing the route (precision 6). Optional, but either markers or a polyline must be specified. Be careful not to double escape this.",
+      )
+      .optional(),
     strokeColor: z
       .string()
       .describe(
-        "Optional color for the route line (hex code or CSS color name; e.g. FFFFFF or blue).",
+        "Optional color for the polyline (hex code or CSS color name; e.g. FFFFFF or blue).",
       )
       .optional(),
     strokeWidth: z
@@ -238,10 +131,12 @@ server.tool(
           markerStyle: markerStyleSchema,
         }),
       )
-      .describe("Optional markers to add to the map.")
+      .describe(
+        "Markers to add to the map. Optional, but either markers or a polyline must be specified.",
+      )
       .optional(),
   },
-  staticRouteMap,
+  staticMap,
 );
 
 async function main() {
