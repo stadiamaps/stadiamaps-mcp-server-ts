@@ -58,7 +58,7 @@ export const focusPointSchema = z
 export const geocodingUnstructuredQuery = z
   .string()
   .describe(
-    "The address or place name to search for. Use local formatting and order when possible. When searching for a POI name (e.g. 'Starbucks'), you will get better results with a focus point and filters. Avoid spelling out precise locations (e.g. 'Starbucks, Downtown Greenville'); this is acceptable for large areas though (e.g. 'Paris, France' is OK, as is 'Louvre, Paris'). Make multiple queries or use general knowledge when necessary to get a more relevant result.",
+    "The address or place name to search for. Use local formatting and order when possible. When searching for a POI name (e.g. 'Starbucks'), you will get better results with a focus point and filters. Avoid spelling out precise locations (e.g. 'Starbucks, Downtown Greenville'); this is acceptable for large areas though (e.g. 'Paris, France' is OK, as is 'Louvre, Paris'). Make multiple queries or use general knowledge when necessary to identify the correct non-textual filters.",
   );
 
 export const geocodingCommonSchema = z.object({

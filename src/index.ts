@@ -79,7 +79,7 @@ server.tool(
 
 server.tool(
   "route-overview",
-  "Get high-level routing information between two or more locations. Includes travel time, distance, and an encoded polyline of the route. The result is JSON. Be careful with polyline output as the JSON string may contain escaped backslashes!",
+  "Get high-level routing information between two or more locations. Includes travel time, distance, and an encoded polyline of the route. The result is JSON.",
   {
     locations: z.array(coordinatesSchema).min(2),
     costing: costingSchema,
@@ -108,7 +108,7 @@ server.tool(
     encodedPolyline: z
       .string()
       .describe(
-        "The encoded polyline representing the route (precision 6). Optional, but either markers or a polyline must be specified. Be careful not to double escape this.",
+        "The encoded polyline representing the route (precision 6). Optional, but either markers or a polyline must be specified.",
       )
       .optional(),
     strokeColor: z

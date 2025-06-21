@@ -8,7 +8,7 @@ that provides AI assistants with access to Stadia Maps APIs for location service
 - Time information anywhere on earth
   - Current time
   - Time zone info (ID, UTC offset, and whether a special offset like daylight saving/summer time is in effect)
-- Geocoding & Search
+- Geocoding
   - Address lookup
   - Place search (POIs like restaurants, cafes, etc.)
 - Static map image generation (including markers and route overlays)
@@ -21,7 +21,7 @@ Here are just a few of the ways you can prompt an LLM
 to make use of the tools:
 
 - "What time is it in Tokyo?"
-- "Make me a map showing the walking route from Coffee Duck in Hongdae to the nearest 생활맥주."
+- "Make me a map showing the walking route from Depoo Turg to the Põhjala Tap Room."
 - "Is the Põhjala Tap Room open right now? Use Stadia Maps to get this information."
 - "Geocode the addresses in the attached spreadsheet."
 
@@ -65,11 +65,11 @@ This example demonstrates how to:
 
 ## Tips and Tricks
 
-LLMs are not perfect,
+LLMs are far from perfect,
 and sometimes you need to put some thought into crafting prompts
 to get good results.
 
-### Tell the LLM which tool(s) to use
+### When possible, be specific about which tool(s) to use
 
 Sometimes the model needs a nudge to use the right tool.
 For example, if you ask for opening hours,

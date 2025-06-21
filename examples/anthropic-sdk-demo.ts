@@ -48,9 +48,13 @@ class StadiaMapsIntegration {
       // Get tools dynamically from the MCP server
       const { tools } = await this.mcpClient.listTools();
 
-      // Convert to Anthropic format (minimal transformation)
-      const anthropicTools = tools.map(
+
+      const anthropicTools = tools.filter(({ name }) => {
+        // Limit which tools are exposed to save context.
+        return name === "time-and-zone-info" || name === "geocode" || name === "route-overview" || name == "static-map";
+      }).map(
         ({ name, description, inputSchema }) => ({
+          // Convert to Anthropic format (minimal transformation)
           name,
           description,
           input_schema: inputSchema,
@@ -92,10 +96,15 @@ class StadiaMapsIntegration {
                 arguments: toolCall.input as Record<string, unknown>,
               });
 
+              // Use structured content if available
+              const content = (result as any).structuredContent
+                ? JSON.stringify((result as any).structuredContent)
+                : processToolResultContent(result.content);
+
               return {
                 tool_use_id: toolCall.id,
                 type: "tool_result" as const,
-                content: processToolResultContent(result.content),
+                content: content,
               };
             } catch (error) {
               return {
@@ -161,7 +170,7 @@ function processToolResultContent(content: any): string {
       } else {
         // Handle other content types
         console.log("Tool result: ", item);
-        results.push(item.type === "string" ? item : JSON.stringify(item));
+        results.push(item.type === "text" ? item.text : JSON.stringify(item));
       }
     }
 
@@ -178,6 +187,11 @@ function extractTextResponse(content: ContentBlock[]) {
   );
 }
 
+/**
+ * Asks a single question. That is, each message does not include any previous context.
+ *
+ * @param question Your prompt to the model (e.g. "What time is it in Tokyo?")
+ */
 async function askSingleQuestion(question: string) {
   const integration = new StadiaMapsIntegration();
   try {
@@ -194,48 +208,22 @@ async function askSingleQuestion(question: string) {
 async function main() {
   console.log("🚀 Starting Stadia Maps + Claude integration examples\n");
 
-  // const integration = new StadiaMapsIntegration();
-  // try {
-  //     // One-time setup
-  //     await integration.initialize();
-  //
-  //     // Example 1: a simple query
-  //     console.log('=== Simple query (current time in Tokyo) ===');
-  //     const response1 = await integration.ask(
-  //         "What time is it in Tokyo?"
-  //     );
-  //     console.log(extractTextResponse(response1.content));
-  //
-  //     // Example 2: Generate a static map.
-  //     console.log('\n=== Static map + routing ===');
-  //     const response2 = await integration.ask(
-  //         "Make me a map showing the walking route from Coffee Duck in Hongdae to the nearest 생활맥주."
-  //     );
-  //     console.log(extractTextResponse(response2.content));
-  //
-  //     // Example 3: Opening hours
-  //     console.log('\n=== Place information ===');
-  //     const response3 = await integration.ask(
-  //         "Is the Põhjala Tap Room open right now? Use Stadia Maps to get this information."
-  //     );
-  //     console.log(extractTextResponse(response3.content));
-  // } finally {
-  //     await integration.cleanup();
-  // }
-
-  // await askSingleQuestion("What time is it in Tokyo?").then((response) => {
-  //     console.log(extractTextResponse(response.content));
-  // });
+  await askSingleQuestion("What time is it in Tokyo?").then((response) => {
+      console.log(extractTextResponse(response.content));
+  });
 
   await askSingleQuestion(
-    "Make me a map showing the walking route from Coffee Duck in Hongdae to the nearest 생활맥주.",
+    "Make me a map showing the walking route from Depoo Turg to Põhjala Tap Room.",
   ).then((response) => {
+    console.log(extractTextResponse(response.content));
+  });
+
+  await askSingleQuestion("Is the Põhjala Tap Room open right now? Use Stadia Maps to get this information?").then((response) => {
     console.log(extractTextResponse(response.content));
   });
 }
 
-// Export for module use
-export { StadiaMapsIntegration };
+export { askSingleQuestion };
 
 // Run examples if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
