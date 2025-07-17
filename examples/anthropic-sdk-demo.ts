@@ -34,7 +34,7 @@ class StadiaMapsIntegration {
     });
 
     this.mcpClient = new Client(
-      { name: "stadiaamaps-client", version: "1.0.0" },
+      { name: "stadiamaps-client", version: "1.0.0" },
       { capabilities: { tools: {} } },
     );
 
