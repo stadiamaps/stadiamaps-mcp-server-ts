@@ -182,6 +182,7 @@ describe("Geocoding Tools", () => {
 
       const result = await geocode(params);
 
+      expect(result.content[0].text).toMatch(/Bounding Box \(W, S, E, N\):.*/);
       expect(result.content[0].text).toMatch(/Name:.*/);
       expect(result.content[0].text).toMatch(/GeoJSON Geometry:.*/);
       expect(result.content[0].text).toMatch(/Location:.*/);

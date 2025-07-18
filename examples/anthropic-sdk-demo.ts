@@ -48,18 +48,22 @@ class StadiaMapsIntegration {
       // Get tools dynamically from the MCP server
       const { tools } = await this.mcpClient.listTools();
 
-
-      const anthropicTools = tools.filter(({ name }) => {
-        // Limit which tools are exposed to save context.
-        return name === "time-and-zone-info" || name === "geocode" || name === "route-overview" || name == "static-map";
-      }).map(
-        ({ name, description, inputSchema }) => ({
+      const anthropicTools = tools
+        .filter(({ name }) => {
+          // Limit which tools are exposed to save context.
+          return (
+            name === "time-and-zone-info" ||
+            name === "geocode" ||
+            name === "route-overview" ||
+            name == "static-map"
+          );
+        })
+        .map(({ name, description, inputSchema }) => ({
           // Convert to Anthropic format (minimal transformation)
           name,
           description,
           input_schema: inputSchema,
-        }),
-      );
+        }));
 
       let messages: MessageParam[] = [{ role: "user", content: question }];
 
@@ -209,7 +213,7 @@ async function main() {
   console.log("🚀 Starting Stadia Maps + Claude integration examples\n");
 
   await askSingleQuestion("What time is it in Tokyo?").then((response) => {
-      console.log(extractTextResponse(response.content));
+    console.log(extractTextResponse(response.content));
   });
 
   await askSingleQuestion(
@@ -218,7 +222,9 @@ async function main() {
     console.log(extractTextResponse(response.content));
   });
 
-  await askSingleQuestion("Is the Põhjala Tap Room open right now? Use Stadia Maps to get this information?").then((response) => {
+  await askSingleQuestion(
+    "Is the Põhjala Tap Room open right now? Use Stadia Maps to get this information?",
+  ).then((response) => {
     console.log(extractTextResponse(response.content));
   });
 }

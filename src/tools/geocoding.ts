@@ -40,10 +40,16 @@ function geocodingToolResult(
         location = feature.properties.coarseLocation;
       }
 
+      // Format bounding box if available (GeoJSON bbox is [west, south, east, north])
+      const bboxInfo = envelope.bbox
+        ? `[${envelope.bbox[0]}, ${envelope.bbox[1]}, ${envelope.bbox[2]}, ${envelope.bbox[3]}]`
+        : "N/A (point geometry)";
+
       return [
         `Name: ${feature.properties?.name}`,
         `GeoJSON Geometry: ${JSON.stringify(feature.geometry)}`,
         `Location: ${location || "unknown"}`,
+        `Bounding Box (W, S, E, N): ${bboxInfo}`,
         `Additional information: ${JSON.stringify(feature.properties.addendum)}`,
       ].join("\n");
     })
@@ -53,7 +59,7 @@ function geocodingToolResult(
     content: [
       {
         type: "text",
-        text: `Results:\n---${res}`,
+        text: `Results:\n---\n${res}`,
       },
     ],
   };
@@ -131,6 +137,7 @@ function bulkGeocodingToolResult(
             geometry: feature.geometry,
             matchType: feature.properties?.matchType,
             addendum: feature.properties?.addendum,
+            bbox: feature.bbox,
           };
           // Slice to keep only the first element in the array;
           // we request a few more to enable dedupe, but only keep the first one.
