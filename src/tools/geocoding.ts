@@ -41,8 +41,8 @@ function geocodingToolResult(
       }
 
       // Format bounding box if available (GeoJSON bbox is [west, south, east, north])
-      const bboxInfo = envelope.bbox
-        ? `[${envelope.bbox[0]}, ${envelope.bbox[1]}, ${envelope.bbox[2]}, ${envelope.bbox[3]}]`
+      const bboxInfo = feature.bbox
+        ? `[${feature.bbox[0]}, ${feature.bbox[1]}, ${feature.bbox[2]}, ${feature.bbox[3]}]`
         : "N/A (point geometry)";
 
       return [
