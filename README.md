@@ -51,7 +51,19 @@ API key in hand, here are a few ways you can use the MCP server.
 
 See [Claude Desktop Setup](claude-desktop-setup.md) for detailed instructions
 on configuring this MCP server with Claude Desktop.
-Claude Desktop is a great tool for testing out workflows
+Claude Desktop is a great tool for testing out workflows.
+
+### Warp
+
+See [Warp Setup](warp-setup.md) for detailed instructions
+on setting up Warp with this MCP server.
+Warp is a powerful agentic environment that uses LLMs to do things on your behalf.
+Whereas you would need to upload a file to Claude,
+Warp can directly access files,
+write code, and execute programs on your computer.
+
+Paired with the Stadia Maps MCP, it's a powerful tool for tasks like bulk geocoding,
+spatially filtering datasets, and more.
 
 ### Programmatic Integration with Anthropic SDK
 
