@@ -66,9 +66,9 @@ export const geocodingCommonSchema = z.object({
   lang: languageSchema,
   focusPoint: focusPointSchema,
   layer: z
-    .enum(["address", "poi", "coarse"])
+    .enum(["address", "poi", "coarse", "country", "region", "locality"])
     .describe(
-      "The layer to search in. Coarse searches for areas such as neighborhoods, cities, states, and countries. Address searches for street addresses. POI searches for points of interest including restaurants, parks, shops, and museums. Defaults to all layers if not specified.",
+      "The layer to search in. Coarse searches for areas such as neighborhoods, cities, states, and countries, AND a specific layer is not available. Address searches for street addresses. Country is what you expect. Localities are what we would colloquially refer to as a 'city', town, or village. Region is for first-level subdivisions within countries like states, provinces, or whatever they are called locally. POI searches for points of interest including restaurants, parks, shops, and museums. Defaults to all layers if not specified.",
     )
     .optional(),
 });

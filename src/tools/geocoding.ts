@@ -47,6 +47,7 @@ function geocodingToolResult(
 
       return [
         `Name: ${feature.properties?.name}`,
+        `Layer: ${feature.properties?.layer}`,
         `GeoJSON Geometry: ${JSON.stringify(feature.geometry)}`,
         `Location: ${location || "unknown"}`,
         `Bounding Box (W, S, E, N): ${bboxInfo}`,
