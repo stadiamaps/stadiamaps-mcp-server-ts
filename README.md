@@ -3,6 +3,7 @@
 This is a Model Context Protocol (MCP) server
 that provides AI assistants with access to Stadia Maps APIs for location services, geocoding, routing, and mapping capabilities.
 
+[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/stadiamaps/stadiamaps-mcp-server-ts)](https://archestra.ai/mcp-catalog/stadiamaps__stadiamaps-mcp-server-ts)
 <a href="https://glama.ai/mcp/servers/@stadiamaps/stadiamaps-mcp-server-ts">
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@stadiamaps/stadiamaps-mcp-server-ts/badge" alt="Stadia Maps Location API Server MCP server" />
 </a>
