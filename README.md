@@ -137,3 +137,8 @@ If you build the suite out to ~10 tools, you can end up with tens of thousands o
 **This project is a starting point**,
 and we've left comments throughout [`index.ts`](src/index.ts) noting our approach to building tools,
 and how you can tailor them for your use case.
+
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/stadiamaps-stadiamaps-mcp-server-ts).
+
